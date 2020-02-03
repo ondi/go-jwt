@@ -26,7 +26,7 @@ func SignVerify(t * testing.T, key string, cert string) {
 	var s Sign_t
 	err := s.LoadKeyPem(key)
 	assert.NilError(t, err, "LOAD KEY")
-	token, err := Create(s, 256, payload)
+	token, err := Create(s, hash_bits, payload)
 	assert.NilError(t, err, "JWT CREATE")
 	t.Logf("SignVerify: key=%v, alg=%v, out=%s", key, s.Name(hash_bits), token.Bytes())
 	
