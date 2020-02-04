@@ -15,8 +15,7 @@ import "encoding/pem"
 import "io/ioutil"
 import "math/big"
 
-func SHA(bits int) (crypto.Hash, bool) {
-	var res crypto.Hash
+func SHA(bits int) (res crypto.Hash) {
 	if bits <= 224 {
 		res = crypto.SHA224
 	} else if bits <= 256 {
@@ -26,7 +25,7 @@ func SHA(bits int) (crypto.Hash, bool) {
 	} else /*if bits <= 512*/ {
 		res = crypto.SHA512
 	}
-	return res, res.Available()
+	return
 }
 
 type Sign_t struct {
@@ -77,7 +76,7 @@ func (self * Sign_t) Sign(bits int, message []byte) (signature []byte, err error
 	case ed25519.PrivateKey:
 		signature, err = k.Sign(rand.Reader, message, crypto.Hash(0))
 	case *rsa.PrivateKey:
-		if res, ok := SHA(bits); ok {
+		if res := SHA(bits); res.Available() {
 			h := res.New()
 			h.Write(message)
 			signature, err = k.Sign(rand.Reader, h.Sum(nil), res)
@@ -85,7 +84,7 @@ func (self * Sign_t) Sign(bits int, message []byte) (signature []byte, err error
 			err = fmt.Errorf("HASH NOT AVAILABLE %v", bits)
 		}
 	case *ecdsa.PrivateKey:
-		if res, ok := SHA(bits); ok {
+		if res := SHA(bits); res.Available() {
 			h := res.New()
 			h.Write(message)
 			var r, s * big.Int
@@ -149,7 +148,7 @@ func (self * Verify_t) Verify(bits int, message []byte, signature []byte) (ok bo
 	case ed25519.PublicKey:
 		ok = ed25519.Verify(k, message, signature)
 	case *rsa.PublicKey:
-		if res, ok := SHA(bits); ok {
+		if res := SHA(bits); res.Available() {
 			h := res.New()
 			h.Write(message)
 			if err = rsa.VerifyPKCS1v15(k, res, h.Sum(nil), signature); err == nil {
@@ -163,7 +162,7 @@ func (self * Verify_t) Verify(bits int, message []byte, signature []byte) (ok bo
 		}
 		r := big.NewInt(0).SetBytes(signature[:CurveBytes])
 		s := big.NewInt(0).SetBytes(signature[CurveBytes:])
-		if res, ok2 := SHA(bits); ok2 {
+		if res := SHA(bits); res.Available() {
 			h := res.New()
 			h.Write(message)
 			ok = ecdsa.Verify(k, h.Sum(nil), r, s)
