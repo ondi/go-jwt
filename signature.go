@@ -4,16 +4,18 @@
 
 package jwt
 
-import "fmt"
-import "crypto"
-import "crypto/rsa"
-import "crypto/ecdsa"
-import "crypto/ed25519"
-import "crypto/rand"
-import "crypto/x509"
-import "encoding/pem"
-import "io/ioutil"
-import "math/big"
+import (
+	"crypto"
+	"crypto/ecdsa"
+	"crypto/ed25519"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
+	"fmt"
+	"io/ioutil"
+	"math/big"
+)
 
 func SHA(bits int) (res crypto.Hash) {
 	if bits <= 224 {
@@ -32,7 +34,7 @@ type Sign_t struct {
 	key crypto.PrivateKey
 }
 
-func (self * Sign_t) LoadKeyPem(file string) (err error) {
+func (self *Sign_t) LoadKeyPem(file string) (err error) {
 	var buf []byte
 	if buf, err = ioutil.ReadFile(file); err != nil {
 		return
@@ -47,7 +49,7 @@ func (self * Sign_t) LoadKeyPem(file string) (err error) {
 	return
 }
 
-func (self * Sign_t) LoadKeyDer(file string) (err error) {
+func (self *Sign_t) LoadKeyDer(file string) (err error) {
 	var buf []byte
 	if buf, err = ioutil.ReadFile(file); err != nil {
 		return
@@ -58,7 +60,7 @@ func (self * Sign_t) LoadKeyDer(file string) (err error) {
 	return
 }
 
-func (self * Sign_t) Name(bits int) string {
+func (self *Sign_t) Name(bits int) string {
 	switch k := self.key.(type) {
 	case ed25519.PrivateKey:
 		return "ED25519"
@@ -71,7 +73,7 @@ func (self * Sign_t) Name(bits int) string {
 	}
 }
 
-func (self * Sign_t) Sign(bits int, message []byte) (signature []byte, err error) {
+func (self *Sign_t) Sign(bits int, message []byte) (signature []byte, err error) {
 	switch k := self.key.(type) {
 	case ed25519.PrivateKey:
 		signature, err = k.Sign(rand.Reader, message, crypto.Hash(0))
@@ -87,16 +89,16 @@ func (self * Sign_t) Sign(bits int, message []byte) (signature []byte, err error
 		if res := SHA(bits); res.Available() {
 			h := res.New()
 			h.Write(message)
-			var r, s * big.Int
+			var r, s *big.Int
 			if r, s, err = ecdsa.Sign(rand.Reader, k, h.Sum(nil)); err != nil {
 				return
 			}
 			CurveBytes := (k.Params().BitSize + 7) / 8
-			for i := 0; i < CurveBytes - len(r.Bytes()); i++ {
+			for i := 0; i < CurveBytes-len(r.Bytes()); i++ {
 				signature = append(signature, 0)
 			}
 			signature = append(signature, r.Bytes()...)
-			for i := 0; i < CurveBytes - len(s.Bytes()); i++ {
+			for i := 0; i < CurveBytes-len(s.Bytes()); i++ {
 				signature = append(signature, 0)
 			}
 			signature = append(signature, s.Bytes()...)
@@ -113,7 +115,7 @@ type Verify_t struct {
 	key crypto.PublicKey
 }
 
-func (self * Verify_t) LoadCertPem(file string) (err error) {
+func (self *Verify_t) LoadCertPem(file string) (err error) {
 	var buf []byte
 	if buf, err = ioutil.ReadFile(file); err != nil {
 		return
@@ -130,7 +132,7 @@ func (self * Verify_t) LoadCertPem(file string) (err error) {
 	return
 }
 
-func (self * Verify_t) LoadCertDer(file string) (err error) {
+func (self *Verify_t) LoadCertDer(file string) (err error) {
 	var buf []byte
 	if buf, err = ioutil.ReadFile(file); err != nil {
 		return
@@ -143,7 +145,7 @@ func (self * Verify_t) LoadCertDer(file string) (err error) {
 	return
 }
 
-func (self * Verify_t) Verify(bits int, message []byte, signature []byte) (ok bool, err error) {
+func (self *Verify_t) Verify(bits int, message []byte, signature []byte) (ok bool, err error) {
 	switch k := self.key.(type) {
 	case ed25519.PublicKey:
 		ok = ed25519.Verify(k, message, signature)
@@ -157,7 +159,7 @@ func (self * Verify_t) Verify(bits int, message []byte, signature []byte) (ok bo
 		}
 	case *ecdsa.PublicKey:
 		CurveBytes := (k.Params().BitSize + 7) / 8
-		if len(signature) < 2 * CurveBytes {
+		if len(signature) < 2*CurveBytes {
 			return false, fmt.Errorf("SIGNATURE LENGTH")
 		}
 		r := big.NewInt(0).SetBytes(signature[:CurveBytes])
