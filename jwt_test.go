@@ -28,14 +28,14 @@ func SignVerify(t *testing.T, key string, cert string) {
 	var s Sign_t
 	err := s.LoadKeyPem(key)
 	assert.NilError(t, err, "LOAD KEY")
-	token, err := Create(s, hash_bits, payload)
+	token, err := Sign(&s, hash_bits, payload)
 	assert.NilError(t, err, "JWT CREATE")
 	t.Logf("SignVerify: key=%v, alg=%v, out=%s", key, s.Name(hash_bits), token.Bytes())
 
 	var v Verify_t
 	err = v.LoadCertPem(cert)
 	assert.NilError(t, err, "LOAD CERT")
-	payload, ok, err := Verify(v, token.Bytes())
+	payload, ok, err := Verify(&v, token.Bytes())
 	assert.NilError(t, err, "VERIFY ERROR")
 	assert.Assert(t, ok, "VERIFY")
 	err = Validate(payload)
@@ -77,4 +77,33 @@ func Test08(t *testing.T) {
 
 func Test09(t *testing.T) {
 	SignVerify(t, "test09.pem", "test09.crt")
+}
+
+func Test10(t *testing.T) {
+	hash_bits := 256
+
+	ts := time.Now()
+	payload := map[string]interface{}{}
+	// issued at
+	payload["iat"] = ts.Unix()
+	// not before
+	payload["nbf"] = ts.Unix()
+	// expiration
+	payload["exp"] = ts.Add(15 * time.Second).Unix()
+	// data
+	payload["lalala"] = "bububu"
+
+	var h Hmac_t
+	err := h.LoadKeyPem("test10.hmac")
+	assert.NilError(t, err, "LOAD KEY")
+	token, err := Sign(&h, hash_bits, payload)
+	assert.NilError(t, err, "JWT CREATE")
+	t.Logf("Test10: key=%v, alg=%v, out=%s", "test10.hmac", h.Name(hash_bits), token.Bytes())
+
+	payload, ok, err := Verify(&h, token.Bytes())
+	assert.NilError(t, err, "VERIFY ERROR")
+	assert.Assert(t, ok, "VERIFY")
+	err = Validate(payload)
+	assert.NilError(t, err, "VALIDATE")
+	t.Logf("PAYLOAD: %v", payload)
 }

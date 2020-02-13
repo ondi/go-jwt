@@ -17,7 +17,7 @@ type Header_t struct {
 	Alg string `json:"alg"`
 }
 
-func Create(s Sign_t, bits int, payload map[string]interface{}) (res bytes.Buffer, err error) {
+func Sign(s Signer, bits int, payload map[string]interface{}) (res bytes.Buffer, err error) {
 	writer := base64.NewEncoder(base64.RawURLEncoding, &res)
 	if err = json.NewEncoder(writer).Encode(Header_t{Alg: s.Name(bits)}); err != nil {
 		return
@@ -38,7 +38,7 @@ func Create(s Sign_t, bits int, payload map[string]interface{}) (res bytes.Buffe
 	return
 }
 
-func Verify(v Verify_t, in []byte) (payload map[string]interface{}, ok bool, err error) {
+func Verify(v Verifier, in []byte) (payload map[string]interface{}, ok bool, err error) {
 	ix_payload := bytes.IndexByte(in, byte('.'))
 	if ix_payload == -1 {
 		err = fmt.Errorf("FORMAT ERROR")

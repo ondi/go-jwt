@@ -8,6 +8,7 @@ import (
 	"crypto"
 	"crypto/ecdsa"
 	"crypto/ed25519"
+	"crypto/hmac"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
@@ -16,6 +17,19 @@ import (
 	"io/ioutil"
 	"math/big"
 )
+
+type Signer interface {
+	LoadKeyPem(file string) (err error)
+	LoadKeyDer(file string) (err error)
+	Name(bits int) string
+	Sign(bits int, message []byte) (signature []byte, err error)
+}
+
+type Verifier interface {
+	LoadCertPem(file string) (err error)
+	LoadCertDer(file string) (err error)
+	Verify(bits int, message []byte, signature []byte) (ok bool, err error)
+}
 
 func SHA(bits int) (res crypto.Hash) {
 	if bits <= 224 {
@@ -171,6 +185,55 @@ func (self *Verify_t) Verify(bits int, message []byte, signature []byte) (ok boo
 		}
 	default:
 		err = fmt.Errorf("KEY NOT SUPPORTED: %T", k)
+	}
+	return
+}
+
+type Hmac_t struct {
+	key []byte
+}
+
+func (self *Hmac_t) LoadKeyPem(file string) (err error) {
+	if self.key, err = ioutil.ReadFile(file); err != nil {
+		return
+	}
+	return
+}
+
+func (self *Hmac_t) LoadKeyDer(file string) (err error) {
+	return self.LoadKeyPem(file)
+}
+
+func (self *Hmac_t) LoadCertPem(file string) (err error) {
+	return self.LoadKeyPem(file)
+}
+
+func (self *Hmac_t) LoadCertDer(file string) (err error) {
+	return self.LoadKeyPem(file)
+}
+
+func (self *Hmac_t) Name(bits int) string {
+	return fmt.Sprintf("HS%d", bits)
+}
+
+func (self *Hmac_t) Sign(bits int, message []byte) (signature []byte, err error) {
+	if res := SHA(bits); res.Available() {
+		h := hmac.New(res.New, self.key)
+		h.Write(message)
+		signature = h.Sum(nil)
+	} else {
+		err = fmt.Errorf("HASH NOT AVAILABLE %v", bits)
+	}
+	return
+}
+
+func (self *Hmac_t) Verify(bits int, message []byte, signature []byte) (ok bool, err error) {
+	if res := SHA(bits); res.Available() {
+		h := hmac.New(res.New, self.key)
+		h.Write(message)
+		ok = hmac.Equal(h.Sum(nil), signature)
+	} else {
+		err = fmt.Errorf("HASH NOT AVAILABLE %v", bits)
 	}
 	return
 }
