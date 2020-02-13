@@ -33,19 +33,21 @@ func SignVerify(t *testing.T, key string, cert string) {
 	assert.NilError(t, err, "LOAD KEY")
 	token, err := Sign(&s, hash_bits, payload)
 	assert.NilError(t, err, "JWT CREATE")
-	t.Logf("SignVerify: key=%v, alg=%v, out=%s", key, s.Name(hash_bits), token.Bytes())
+	t.Logf("Sign: key=%v, alg=%v, out=%s", key, s.Name(hash_bits), token.Bytes())
 
 	var v Verify_t
 	buf, err = ioutil.ReadFile(cert)
 	assert.NilError(t, err, "READ CERT")
 	err = v.LoadCertPem(buf)
 	assert.NilError(t, err, "LOAD CERT")
-	payload, ok, err := Verify(&v, token.Bytes())
+	_, bits, err := Header(token.Bytes())
+	assert.NilError(t, err)
+	payload, ok, err := Verify(&v, bits, token.Bytes())
 	assert.NilError(t, err, "VERIFY ERROR")
 	assert.Assert(t, ok, "VERIFY")
 	err = Validate(payload)
 	assert.NilError(t, err, "VALIDATE")
-	t.Logf("PAYLOAD: %v", payload)
+	t.Logf("Verify: cert=%v, alg=%v, payload=%v", cert, v.Name(hash_bits), payload)
 }
 
 func Test01(t *testing.T) {
@@ -105,12 +107,14 @@ func Test10(t *testing.T) {
 	assert.NilError(t, err, "LOAD KEY")
 	token, err := Sign(&h, hash_bits, payload)
 	assert.NilError(t, err, "JWT CREATE")
-	t.Logf("Test10: key=%v, alg=%v, out=%s", "test10.hmac", h.Name(hash_bits), token.Bytes())
+	t.Logf("Sign: key=%v, alg=%v, out=%s", "test10.hmac", h.Name(hash_bits), token.Bytes())
 
-	payload, ok, err := Verify(&h, token.Bytes())
+	_, bits, err := Header(token.Bytes())
+	assert.NilError(t, err)
+	payload, ok, err := Verify(&h, bits, token.Bytes())
 	assert.NilError(t, err, "VERIFY ERROR")
 	assert.Assert(t, ok, "VERIFY")
 	err = Validate(payload)
 	assert.NilError(t, err, "VALIDATE")
-	t.Logf("PAYLOAD: %v", payload)
+	t.Logf("Verify: cert=%v, alg=%v, payload=%v", "test10.hmac", h.Name(hash_bits), payload)
 }

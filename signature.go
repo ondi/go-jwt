@@ -27,6 +27,7 @@ type Signer interface {
 type Verifier interface {
 	LoadCertPem(buf []byte) (err error)
 	LoadCertDer(buf []byte) (err error)
+	Name(bits int) string
 	Verify(bits int, message []byte, signature []byte) (ok bool, err error)
 }
 
@@ -140,6 +141,19 @@ func (self *Verify_t) LoadCertDer(buf []byte) (err error) {
 	}
 	self.key = certificate.PublicKey
 	return
+}
+
+func (self *Verify_t) Name(bits int) string {
+	switch k := self.key.(type) {
+	case ed25519.PublicKey:
+		return "ED25519"
+	case *rsa.PublicKey:
+		return fmt.Sprintf("RS%d", bits)
+	case *ecdsa.PublicKey:
+		return fmt.Sprintf("ES%d", bits)
+	default:
+		return fmt.Sprintf("KEY NOT SUPPORTED: %T", k)
+	}
 }
 
 func (self *Verify_t) Verify(bits int, message []byte, signature []byte) (ok bool, err error) {

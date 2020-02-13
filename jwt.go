@@ -38,38 +38,40 @@ func Sign(s Signer, bits int, payload map[string]interface{}) (res bytes.Buffer,
 	return
 }
 
-func Verify(v Verifier, in []byte) (payload map[string]interface{}, ok bool, err error) {
-	ix_payload := bytes.IndexByte(in, byte('.'))
-	if ix_payload == -1 {
+func Header(in []byte) (header Header_t, hash_bits int, err error) {
+	ix_header := bytes.IndexByte(in, byte('.'))
+	if ix_header == -1 {
 		err = fmt.Errorf("FORMAT ERROR")
 		return
 	}
-	ix_sign := bytes.IndexByte(in[ix_payload+1:], byte('.'))
-	if ix_sign == -1 {
-		err = fmt.Errorf("FORMAT ERROR")
-		return
-	}
-	ix_sign += ix_payload + 1
-	var header Header_t
-	if err = json.NewDecoder(base64.NewDecoder(base64.RawURLEncoding, bytes.NewBuffer(in[:ix_payload]))).Decode(&header); err != nil {
+	if err = json.NewDecoder(base64.NewDecoder(base64.RawURLEncoding, bytes.NewBuffer(in[:ix_header]))).Decode(&header); err != nil {
 		return
 	}
 	if len(header.Alg) < 5 {
 		err = fmt.Errorf("ALG NOT SUPPORTED")
 		return
 	}
-	var bits int
-	if bits, err = strconv.Atoi(header.Alg[2:]); err != nil {
+	if hash_bits, err = strconv.Atoi(header.Alg[2:]); err != nil {
+		return
+	}
+	return
+}
+
+func Verify(v Verifier, hash_bits int, in []byte) (payload map[string]interface{}, ok bool, err error) {
+	ix_sign := bytes.LastIndexByte(in, byte('.'))
+	if ix_sign == -1 {
+		err = fmt.Errorf("FORMAT ERROR")
 		return
 	}
 	sign := make([]byte, base64.RawURLEncoding.DecodedLen(len(in)-ix_sign-1))
 	if _, err = base64.RawURLEncoding.Decode(sign, in[ix_sign+1:]); err != nil {
 		return
 	}
-	if ok, err = v.Verify(bits, in[:ix_sign], sign); err != nil || !ok {
+	if ok, err = v.Verify(hash_bits, in[:ix_sign], sign); err != nil || !ok {
 		return
 	}
-	err = json.NewDecoder(base64.NewDecoder(base64.RawURLEncoding, bytes.NewBuffer(in[ix_payload+1:ix_sign]))).Decode(&payload)
+	ix_header := bytes.IndexByte(in, '.')
+	err = json.NewDecoder(base64.NewDecoder(base64.RawURLEncoding, bytes.NewBuffer(in[ix_header+1:ix_sign]))).Decode(&payload)
 	return
 }
 
