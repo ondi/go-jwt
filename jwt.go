@@ -14,7 +14,8 @@ import (
 )
 
 type Header_t struct {
-	Alg string `json:"alg"`
+	Alg      string `json:"alg"`
+	HashBits int    `json:"-"`
 }
 
 func Sign(s Signer, bits int, payload map[string]interface{}) (res bytes.Buffer, err error) {
@@ -38,7 +39,7 @@ func Sign(s Signer, bits int, payload map[string]interface{}) (res bytes.Buffer,
 	return
 }
 
-func Header(in []byte) (header Header_t, hash_bits int, err error) {
+func Parse(in []byte) (header Header_t, payload map[string]interface{}, signature []byte, err error) {
 	ix_header := bytes.IndexByte(in, byte('.'))
 	if ix_header == -1 {
 		err = fmt.Errorf("FORMAT ERROR")
@@ -51,27 +52,22 @@ func Header(in []byte) (header Header_t, hash_bits int, err error) {
 		err = fmt.Errorf("ALG NOT SUPPORTED")
 		return
 	}
-	if hash_bits, err = strconv.Atoi(header.Alg[2:]); err != nil {
+	if header.HashBits, err = strconv.Atoi(header.Alg[2:]); err != nil {
 		return
 	}
+	ix_sign := bytes.LastIndexByte(in, byte('.'))
+	signature = make([]byte, base64.RawURLEncoding.DecodedLen(len(in)-ix_sign-1))
+	if _, err = base64.RawURLEncoding.Decode(signature, in[ix_sign+1:]); err != nil {
+		return
+	}
+	err = json.NewDecoder(base64.NewDecoder(base64.RawURLEncoding, bytes.NewBuffer(in[ix_header+1:ix_sign]))).Decode(&payload)
 	return
 }
 
-func Verify(v Verifier, hash_bits int, in []byte) (payload map[string]interface{}, ok bool, err error) {
-	ix_sign := bytes.LastIndexByte(in, byte('.'))
-	if ix_sign == -1 {
-		err = fmt.Errorf("FORMAT ERROR")
-		return
+func Verify(v Verifier, hash_bits int, signature []byte, in []byte) (ok bool, err error) {
+	if ix_sign := bytes.LastIndexByte(in, byte('.')); ix_sign > -1 {
+		ok, err = v.Verify(hash_bits, in[:ix_sign], signature)
 	}
-	sign := make([]byte, base64.RawURLEncoding.DecodedLen(len(in)-ix_sign-1))
-	if _, err = base64.RawURLEncoding.Decode(sign, in[ix_sign+1:]); err != nil {
-		return
-	}
-	if ok, err = v.Verify(hash_bits, in[:ix_sign], sign); err != nil || !ok {
-		return
-	}
-	ix_header := bytes.IndexByte(in, '.')
-	err = json.NewDecoder(base64.NewDecoder(base64.RawURLEncoding, bytes.NewBuffer(in[ix_header+1:ix_sign]))).Decode(&payload)
 	return
 }
 
