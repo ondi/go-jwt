@@ -5,6 +5,7 @@
 package jwt
 
 import (
+	"io/ioutil"
 	"testing"
 	"time"
 
@@ -26,14 +27,18 @@ func SignVerify(t *testing.T, key string, cert string) {
 	payload["lalala"] = "bububu"
 
 	var s Sign_t
-	err := s.LoadKeyPem(key)
+	buf, err := ioutil.ReadFile(key)
+	assert.NilError(t, err, "READ KEY")
+	err = s.LoadKeyPem(buf)
 	assert.NilError(t, err, "LOAD KEY")
 	token, err := Sign(&s, hash_bits, payload)
 	assert.NilError(t, err, "JWT CREATE")
 	t.Logf("SignVerify: key=%v, alg=%v, out=%s", key, s.Name(hash_bits), token.Bytes())
 
 	var v Verify_t
-	err = v.LoadCertPem(cert)
+	buf, err = ioutil.ReadFile(cert)
+	assert.NilError(t, err, "READ CERT")
+	err = v.LoadCertPem(buf)
 	assert.NilError(t, err, "LOAD CERT")
 	payload, ok, err := Verify(&v, token.Bytes())
 	assert.NilError(t, err, "VERIFY ERROR")
@@ -94,7 +99,9 @@ func Test10(t *testing.T) {
 	payload["lalala"] = "bububu"
 
 	var h Hmac_t
-	err := h.LoadKeyPem("test10.hmac")
+	buf, err := ioutil.ReadFile("test10.hmac")
+	assert.NilError(t, err, "READ KEY")
+	err = h.LoadKeyPem(buf)
 	assert.NilError(t, err, "LOAD KEY")
 	token, err := Sign(&h, hash_bits, payload)
 	assert.NilError(t, err, "JWT CREATE")

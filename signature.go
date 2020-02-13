@@ -14,20 +14,19 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
-	"io/ioutil"
 	"math/big"
 )
 
 type Signer interface {
-	LoadKeyPem(file string) (err error)
-	LoadKeyDer(file string) (err error)
+	LoadKeyPem(buf []byte) (err error)
+	LoadKeyDer(buf []byte) (err error)
 	Name(bits int) string
 	Sign(bits int, message []byte) (signature []byte, err error)
 }
 
 type Verifier interface {
-	LoadCertPem(file string) (err error)
-	LoadCertDer(file string) (err error)
+	LoadCertPem(buf []byte) (err error)
+	LoadCertDer(buf []byte) (err error)
 	Verify(bits int, message []byte, signature []byte) (ok bool, err error)
 }
 
@@ -48,11 +47,7 @@ type Sign_t struct {
 	key crypto.PrivateKey
 }
 
-func (self *Sign_t) LoadKeyPem(file string) (err error) {
-	var buf []byte
-	if buf, err = ioutil.ReadFile(file); err != nil {
-		return
-	}
+func (self *Sign_t) LoadKeyPem(buf []byte) (err error) {
 	block, _ := pem.Decode(buf)
 	if block == nil {
 		return fmt.Errorf("PEM decode failed")
@@ -63,11 +58,7 @@ func (self *Sign_t) LoadKeyPem(file string) (err error) {
 	return
 }
 
-func (self *Sign_t) LoadKeyDer(file string) (err error) {
-	var buf []byte
-	if buf, err = ioutil.ReadFile(file); err != nil {
-		return
-	}
+func (self *Sign_t) LoadKeyDer(buf []byte) (err error) {
 	if self.key, err = x509.ParsePKCS8PrivateKey(buf); err != nil {
 		self.key, err = x509.ParseECPrivateKey(buf)
 	}
@@ -129,11 +120,7 @@ type Verify_t struct {
 	key crypto.PublicKey
 }
 
-func (self *Verify_t) LoadCertPem(file string) (err error) {
-	var buf []byte
-	if buf, err = ioutil.ReadFile(file); err != nil {
-		return
-	}
+func (self *Verify_t) LoadCertPem(buf []byte) (err error) {
 	block, _ := pem.Decode(buf)
 	if block == nil {
 		return fmt.Errorf("PEM decode failed")
@@ -146,11 +133,7 @@ func (self *Verify_t) LoadCertPem(file string) (err error) {
 	return
 }
 
-func (self *Verify_t) LoadCertDer(file string) (err error) {
-	var buf []byte
-	if buf, err = ioutil.ReadFile(file); err != nil {
-		return
-	}
+func (self *Verify_t) LoadCertDer(buf []byte) (err error) {
 	var certificate *x509.Certificate
 	if certificate, err = x509.ParseCertificate(buf); err != nil {
 		return
@@ -193,23 +176,21 @@ type Hmac_t struct {
 	key []byte
 }
 
-func (self *Hmac_t) LoadKeyPem(file string) (err error) {
-	if self.key, err = ioutil.ReadFile(file); err != nil {
-		return
-	}
+func (self *Hmac_t) LoadKeyPem(buf []byte) (err error) {
+	self.key = append([]byte{}, buf...)
 	return
 }
 
-func (self *Hmac_t) LoadKeyDer(file string) (err error) {
-	return self.LoadKeyPem(file)
+func (self *Hmac_t) LoadKeyDer(buf []byte) (err error) {
+	return self.LoadKeyPem(buf)
 }
 
-func (self *Hmac_t) LoadCertPem(file string) (err error) {
-	return self.LoadKeyPem(file)
+func (self *Hmac_t) LoadCertPem(buf []byte) (err error) {
+	return self.LoadKeyPem(buf)
 }
 
-func (self *Hmac_t) LoadCertDer(file string) (err error) {
-	return self.LoadKeyPem(file)
+func (self *Hmac_t) LoadCertDer(buf []byte) (err error) {
+	return self.LoadKeyPem(buf)
 }
 
 func (self *Hmac_t) Name(bits int) string {
