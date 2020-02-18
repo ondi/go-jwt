@@ -45,7 +45,7 @@ func SignVerify(t *testing.T, key string, cert string) {
 	ok, err := Verify(&v, header.HashBits, signature, token.Bytes())
 	assert.NilError(t, err, "VERIFY ERROR")
 	assert.Assert(t, ok, "VERIFY")
-	err = Validate(payload)
+	err = Validate(payload, time.Now().Unix())
 	assert.NilError(t, err, "VALIDATE")
 	t.Logf("Verify: cert=%v, alg=%v, payload=%v", cert, v.Name(hash_bits), payload)
 }
@@ -114,7 +114,7 @@ func Test10(t *testing.T) {
 	ok, err := Verify(&h, header.HashBits, signature, token.Bytes())
 	assert.NilError(t, err, "VERIFY ERROR")
 	assert.Assert(t, ok, "VERIFY")
-	err = Validate(payload)
+	err = Validate(payload, time.Now().Unix())
 	assert.NilError(t, err, "VALIDATE")
 	t.Logf("Verify: cert=%v, alg=%v, payload=%v", "test10.hmac", h.Name(hash_bits), payload)
 }

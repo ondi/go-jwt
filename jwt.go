@@ -10,7 +10,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
-	"time"
 )
 
 type Header_t struct {
@@ -71,8 +70,7 @@ func Verify(v Verifier, hash_bits int, signature []byte, in []byte) (ok bool, er
 	return
 }
 
-func Validate(payload map[string]interface{}) error {
-	now := time.Now().Unix()
+func Validate(payload map[string]interface{}, now int64) error {
 	// not before
 	if temp, ok := payload["nbf"]; ok {
 		if nbf, ok := temp.(float64); ok {
