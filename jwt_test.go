@@ -118,3 +118,17 @@ func Test10(t *testing.T) {
 	assert.NilError(t, err, "VALIDATE")
 	t.Logf("Verify: cert=%v, alg=%v, payload=%v", "test10.hmac", h.Name(hash_bits), payload)
 }
+
+func Test11(t *testing.T) {
+	var err error
+	_, _, _, err = Parse(nil)
+	assert.Error(t, err, "FORMAT ERROR")
+	_, _, _, err = Parse([]byte{})
+	assert.Error(t, err, "FORMAT ERROR")
+	_, _, _, err = Parse([]byte("eyJhbGciOiJFRDI1NTE5In0K"))
+	assert.Error(t, err, "FORMAT ERROR")
+	_, _, _, err = Parse([]byte("eyJhbGciOiJFRDI1NTE5In0K.eyJleHAiOjE1ODMyMzM2NjksImlhdCI6MTU4MzIzMzY1NCwibmJmIjoxNTgzMjMzNjU0fQo"))
+	assert.Error(t, err, "FORMAT ERROR")
+	_, _, _, err = Parse([]byte("eyJhbGciOiJFRDI1NTE5In0K.eyJleHAiOjE1ODMyMzM2NjksImlhdCI6MTU4MzIzMzY1NCwibmJmIjoxNTgzMjMzNjU0fQo.YvtfzF8U6N-NmNj2imi3GcVK3fjpgEZ2dmbxDLugyDl1WW1bBK1eRCs2vQf73i7RYJrTWVFeaROodxDrc8_qBQ"))
+	assert.NilError(t, err)
+}

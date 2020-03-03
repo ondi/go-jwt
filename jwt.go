@@ -55,6 +55,10 @@ func Parse(in []byte) (header Header_t, payload map[string]interface{}, signatur
 		return
 	}
 	ix_sign := bytes.LastIndexByte(in, byte('.'))
+	if ix_sign <= ix_header {
+		err = fmt.Errorf("FORMAT ERROR")
+		return
+	}
 	signature = make([]byte, base64.RawURLEncoding.DecodedLen(len(in)-ix_sign-1))
 	if _, err = base64.RawURLEncoding.Decode(signature, in[ix_sign+1:]); err != nil {
 		return
