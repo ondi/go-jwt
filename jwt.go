@@ -74,11 +74,11 @@ func Verify(v Verifier, hash_bits int, signature []byte, in []byte) (ok bool, er
 	return
 }
 
-func Validate(payload map[string]interface{}, now int64) error {
+func Validate(payload map[string]interface{}, ts_nbf int64, ts_exp int64) error {
 	// not before
 	if temp, ok := payload["nbf"]; ok {
 		if nbf, ok := temp.(float64); ok {
-			if now < int64(nbf) {
+			if ts_nbf < int64(nbf) {
 				return fmt.Errorf("nbf")
 			}
 		} else {
@@ -88,7 +88,7 @@ func Validate(payload map[string]interface{}, now int64) error {
 	// expiration
 	if temp, ok := payload["exp"]; ok {
 		if exp, ok := temp.(float64); ok {
-			if now > int64(exp) {
+			if ts_exp > int64(exp) {
 				return fmt.Errorf("exp")
 			}
 		} else {
