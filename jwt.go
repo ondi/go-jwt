@@ -22,19 +22,21 @@ func Sign(s Signer, bits int, payload map[string]interface{}) (res bytes.Buffer,
 	if err = json.NewEncoder(writer).Encode(Header_t{Alg: s.Name(bits)}); err != nil {
 		return
 	}
-	writer.Close() // flush
+	writer.Close()
 	res.WriteByte(byte('.'))
+	writer = base64.NewEncoder(base64.RawURLEncoding, &res)
 	if err = json.NewEncoder(writer).Encode(payload); err != nil {
 		return
 	}
-	writer.Close() // flush
+	writer.Close()
 	var temp []byte
 	if temp, err = s.Sign(bits, res.Bytes()); err != nil {
 		return
 	}
 	res.WriteByte(byte('.'))
+	writer = base64.NewEncoder(base64.RawURLEncoding, &res)
 	writer.Write(temp)
-	writer.Close() // flush
+	writer.Close()
 	return
 }
 
