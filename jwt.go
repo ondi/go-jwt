@@ -14,12 +14,12 @@ import (
 
 type Header_t struct {
 	Alg      string `json:"alg"`
-	HashBits int    `json:"-"`
+	HashBits int64  `json:"-"`
 }
 
-func Sign(s Signer, bits int, payload map[string]interface{}) (res bytes.Buffer, err error) {
+func Sign(s Signer, bits int64, payload map[string]interface{}) (res bytes.Buffer, err error) {
 	writer := base64.NewEncoder(base64.RawURLEncoding, &res)
-	if err = json.NewEncoder(writer).Encode(Header_t{Alg: s.Name(bits)}); err != nil {
+	if err = json.NewEncoder(writer).Encode(Header_t{Alg: s.Name() + strconv.FormatInt(bits, 10)}); err != nil {
 		return
 	}
 	writer.Close()
@@ -53,7 +53,7 @@ func Parse(in []byte) (header Header_t, payload map[string]interface{}, signatur
 		err = fmt.Errorf("ALG NOT SUPPORTED")
 		return
 	}
-	if header.HashBits, err = strconv.Atoi(header.Alg[2:]); err != nil {
+	if header.HashBits, err = strconv.ParseInt(header.Alg[2:], 0, 64); err != nil {
 		return
 	}
 	ix_sign := bytes.LastIndexByte(in, byte('.'))
@@ -69,7 +69,7 @@ func Parse(in []byte) (header Header_t, payload map[string]interface{}, signatur
 	return
 }
 
-func Verify(v Verifier, hash_bits int, signature []byte, in []byte) (ok bool, err error) {
+func Verify(v Verifier, hash_bits int64, signature []byte, in []byte) (ok bool, err error) {
 	if ix_sign := bytes.LastIndexByte(in, byte('.')); ix_sign > -1 {
 		ok, err = v.Verify(hash_bits, in[:ix_sign], signature)
 	}

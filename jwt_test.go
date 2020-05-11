@@ -13,7 +13,7 @@ import (
 )
 
 func SignVerify(t *testing.T, key string, cert string) {
-	hash_bits := 256
+	hash_bits := int64(256)
 
 	ts := time.Now()
 	payload := map[string]interface{}{}
@@ -33,7 +33,7 @@ func SignVerify(t *testing.T, key string, cert string) {
 	assert.NilError(t, err, "LOAD KEY")
 	token, err := Sign(&s, hash_bits, payload)
 	assert.NilError(t, err, "JWT CREATE")
-	t.Logf("Sign: key=%v, alg=%v, out=%s", key, s.Name(hash_bits), token.Bytes())
+	t.Logf("Sign: key=%v, alg=%v, bits=%v, out=%s", key, s.Name(), hash_bits, token.Bytes())
 
 	var v Verify_t
 	buf, err = ioutil.ReadFile(cert)
@@ -47,7 +47,7 @@ func SignVerify(t *testing.T, key string, cert string) {
 	assert.Assert(t, ok, "VERIFY")
 	err = Validate(payload, time.Now().Unix(), time.Now().Unix())
 	assert.NilError(t, err, "VALIDATE")
-	t.Logf("Verify: cert=%v, alg=%v, payload=%v", cert, v.Name(hash_bits), payload)
+	t.Logf("Verify: cert=%v, alg=%v, bits=%v, payload=%v", cert, v.Name(), hash_bits, payload)
 }
 
 func Test01(t *testing.T) {
@@ -87,7 +87,7 @@ func Test09(t *testing.T) {
 }
 
 func Test10(t *testing.T) {
-	hash_bits := 256
+	hash_bits := int64(256)
 
 	ts := time.Now()
 	payload := map[string]interface{}{}
@@ -107,7 +107,7 @@ func Test10(t *testing.T) {
 	assert.NilError(t, err, "LOAD KEY")
 	token, err := Sign(&h, hash_bits, payload)
 	assert.NilError(t, err, "JWT CREATE")
-	t.Logf("Sign: key=%v, alg=%v, out=%s", "test10.hmac", h.Name(hash_bits), token.Bytes())
+	t.Logf("Sign: key=%v, alg=%v, bits=%v, out=%s", "test10.hmac", h.Name(), hash_bits, token.Bytes())
 
 	header, payload, signature, err := Parse(token.Bytes())
 	assert.NilError(t, err)
@@ -116,7 +116,7 @@ func Test10(t *testing.T) {
 	assert.Assert(t, ok, "VERIFY")
 	err = Validate(payload, time.Now().Unix(), time.Now().Unix())
 	assert.NilError(t, err, "VALIDATE")
-	t.Logf("Verify: cert=%v, alg=%v, payload=%v", "test10.hmac", h.Name(hash_bits), payload)
+	t.Logf("Verify: cert=%v, alg=%v, bits=%v, payload=%v", "test10.hmac", h.Name(), hash_bits, payload)
 }
 
 func Test11(t *testing.T) {

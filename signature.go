@@ -20,18 +20,18 @@ import (
 type Signer interface {
 	LoadKeyPem(buf []byte) (err error)
 	LoadKeyDer(buf []byte) (err error)
-	Name(bits int) string
-	Sign(bits int, message []byte) (signature []byte, err error)
+	Name() string
+	Sign(bits int64, message []byte) (signature []byte, err error)
 }
 
 type Verifier interface {
 	LoadCertPem(buf []byte) (err error)
 	LoadCertDer(buf []byte) (err error)
-	Name(bits int) string
-	Verify(bits int, message []byte, signature []byte) (ok bool, err error)
+	Name() string
+	Verify(bits int64, message []byte, signature []byte) (ok bool, err error)
 }
 
-func SHA(bits int) (res crypto.Hash) {
+func SHA(bits int64) (res crypto.Hash) {
 	if bits <= 224 {
 		res = crypto.SHA224
 	} else if bits <= 256 {
@@ -51,7 +51,7 @@ type Sign_t struct {
 func (self *Sign_t) LoadKeyPem(buf []byte) (err error) {
 	block, _ := pem.Decode(buf)
 	if block == nil {
-		return fmt.Errorf("PEM decode failed")
+		return fmt.Errorf("PEM DECODE FAILED")
 	}
 	if self.key, err = x509.ParsePKCS8PrivateKey(block.Bytes); err != nil {
 		self.key, err = x509.ParseECPrivateKey(block.Bytes)
@@ -66,20 +66,20 @@ func (self *Sign_t) LoadKeyDer(buf []byte) (err error) {
 	return
 }
 
-func (self *Sign_t) Name(bits int) string {
+func (self *Sign_t) Name() string {
 	switch k := self.key.(type) {
 	case ed25519.PrivateKey:
-		return "ED25519"
+		return "ED"
 	case *rsa.PrivateKey:
-		return fmt.Sprintf("RS%d", bits)
+		return "RS"
 	case *ecdsa.PrivateKey:
-		return fmt.Sprintf("ES%d", bits)
+		return "ES"
 	default:
 		return fmt.Sprintf("KEY NOT SUPPORTED: %T", k)
 	}
 }
 
-func (self *Sign_t) Sign(bits int, message []byte) (signature []byte, err error) {
+func (self *Sign_t) Sign(bits int64, message []byte) (signature []byte, err error) {
 	switch k := self.key.(type) {
 	case ed25519.PrivateKey:
 		signature, err = k.Sign(rand.Reader, message, crypto.Hash(0))
@@ -124,7 +124,7 @@ type Verify_t struct {
 func (self *Verify_t) LoadCertPem(buf []byte) (err error) {
 	block, _ := pem.Decode(buf)
 	if block == nil {
-		return fmt.Errorf("PEM decode failed")
+		return fmt.Errorf("PEM DECODE FAILED")
 	}
 	var certificate *x509.Certificate
 	if certificate, err = x509.ParseCertificate(block.Bytes); err != nil {
@@ -143,20 +143,20 @@ func (self *Verify_t) LoadCertDer(buf []byte) (err error) {
 	return
 }
 
-func (self *Verify_t) Name(bits int) string {
+func (self *Verify_t) Name() string {
 	switch k := self.key.(type) {
 	case ed25519.PublicKey:
-		return "ED25519"
+		return "ED"
 	case *rsa.PublicKey:
-		return fmt.Sprintf("RS%d", bits)
+		return "RS"
 	case *ecdsa.PublicKey:
-		return fmt.Sprintf("ES%d", bits)
+		return "ES"
 	default:
 		return fmt.Sprintf("KEY NOT SUPPORTED: %T", k)
 	}
 }
 
-func (self *Verify_t) Verify(bits int, message []byte, signature []byte) (ok bool, err error) {
+func (self *Verify_t) Verify(bits int64, message []byte, signature []byte) (ok bool, err error) {
 	switch k := self.key.(type) {
 	case ed25519.PublicKey:
 		ok = ed25519.Verify(k, message, signature)
@@ -207,11 +207,11 @@ func (self *Hmac_t) LoadCertDer(buf []byte) (err error) {
 	return self.LoadKeyPem(buf)
 }
 
-func (self *Hmac_t) Name(bits int) string {
-	return fmt.Sprintf("HS%d", bits)
+func (self *Hmac_t) Name() string {
+	return "HS"
 }
 
-func (self *Hmac_t) Sign(bits int, message []byte) (signature []byte, err error) {
+func (self *Hmac_t) Sign(bits int64, message []byte) (signature []byte, err error) {
 	if res := SHA(bits); res.Available() {
 		h := hmac.New(res.New, self.key)
 		h.Write(message)
@@ -222,7 +222,7 @@ func (self *Hmac_t) Sign(bits int, message []byte) (signature []byte, err error)
 	return
 }
 
-func (self *Hmac_t) Verify(bits int, message []byte, signature []byte) (ok bool, err error) {
+func (self *Hmac_t) Verify(bits int64, message []byte, signature []byte) (ok bool, err error) {
 	if res := SHA(bits); res.Available() {
 		h := hmac.New(res.New, self.key)
 		h.Write(message)
