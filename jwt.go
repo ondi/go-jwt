@@ -78,24 +78,20 @@ func Verify(v Verifier, hash_bits int64, signature []byte, in []byte) (ok bool, 
 
 func Validate(payload map[string]interface{}, ts_nbf int64, ts_exp int64) error {
 	// not before
-	if temp, ok := payload["nbf"]; ok {
-		if nbf, ok := temp.(float64); ok {
-			if ts_nbf < int64(nbf) {
-				return fmt.Errorf("nbf")
-			}
-		} else {
-			return fmt.Errorf("nbf format error")
+	if nbf, ok := payload["nbf"].(float64); ok {
+		if ts_nbf < int64(nbf) {
+			return fmt.Errorf("nbf")
 		}
+	} else {
+		return fmt.Errorf("nbf format error")
 	}
 	// expiration
-	if temp, ok := payload["exp"]; ok {
-		if exp, ok := temp.(float64); ok {
-			if ts_exp > int64(exp) {
-				return fmt.Errorf("exp")
-			}
-		} else {
-			return fmt.Errorf("exp format error")
+	if exp, ok := payload["exp"].(float64); ok {
+		if ts_exp > int64(exp) {
+			return fmt.Errorf("exp")
 		}
+	} else {
+		return fmt.Errorf("exp format error")
 	}
 	return nil
 }
