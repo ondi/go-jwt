@@ -165,8 +165,10 @@ func (self *Verify_t) Verify(bits int64, message []byte, signature []byte) (ok b
 			h := res.New()
 			h.Write(message)
 			if err = rsa.VerifyPKCS1v15(k, res, h.Sum(nil), signature); err == nil {
-				return true, nil
+				ok = true
 			}
+		} else {
+			err = fmt.Errorf("HASH NOT AVAILABLE %v", bits)
 		}
 	case *ecdsa.PublicKey:
 		CurveBytes := (k.Params().BitSize + 7) / 8
@@ -179,6 +181,8 @@ func (self *Verify_t) Verify(bits int64, message []byte, signature []byte) (ok b
 			h := res.New()
 			h.Write(message)
 			ok = ecdsa.Verify(k, h.Sum(nil), r, s)
+		} else {
+			err = fmt.Errorf("HASH NOT AVAILABLE %v", bits)
 		}
 	default:
 		err = fmt.Errorf("KEY NOT SUPPORTED: %T", k)
