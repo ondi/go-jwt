@@ -18,15 +18,11 @@ import (
 )
 
 type Signer interface {
-	LoadKeyPem(buf []byte) (err error)
-	LoadKeyDer(buf []byte) (err error)
 	Name() string
 	Sign(bits int64, message []byte) (signature []byte, err error)
 }
 
 type Verifier interface {
-	LoadCertPem(buf []byte) (err error)
-	LoadCertDer(buf []byte) (err error)
 	Name() string
 	Verify(bits int64, message []byte, signature []byte) (ok bool, err error)
 }
@@ -48,21 +44,24 @@ type Sign_t struct {
 	key crypto.PrivateKey
 }
 
-func (self *Sign_t) LoadKeyPem(buf []byte) (err error) {
+func NewSignPem(buf []byte) (res Sign_t, err error) {
 	block, _ := pem.Decode(buf)
 	if block == nil {
-		return fmt.Errorf("PEM DECODE FAILED")
+		err = fmt.Errorf("PEM DECODE FAILED")
+		return
 	}
-	if self.key, err = x509.ParsePKCS8PrivateKey(block.Bytes); err != nil {
-		self.key, err = x509.ParseECPrivateKey(block.Bytes)
+	return NewSignDer(block.Bytes)
+}
+
+func NewSignDer(buf []byte) (res Sign_t, err error) {
+	if res.key, err = x509.ParsePKCS8PrivateKey(buf); err != nil {
+		res.key, err = x509.ParseECPrivateKey(buf)
 	}
 	return
 }
 
-func (self *Sign_t) LoadKeyDer(buf []byte) (err error) {
-	if self.key, err = x509.ParsePKCS8PrivateKey(buf); err != nil {
-		self.key, err = x509.ParseECPrivateKey(buf)
-	}
+func NewSignKey(key crypto.PrivateKey) (res Sign_t, err error) {
+	res.key = key
 	return
 }
 
@@ -121,25 +120,26 @@ type Verify_t struct {
 	key crypto.PublicKey
 }
 
-func (self *Verify_t) LoadCertPem(buf []byte) (err error) {
+func NewVerifyPem(buf []byte) (res Verify_t, err error) {
 	block, _ := pem.Decode(buf)
 	if block == nil {
-		return fmt.Errorf("PEM DECODE FAILED")
-	}
-	var certificate *x509.Certificate
-	if certificate, err = x509.ParseCertificate(block.Bytes); err != nil {
+		err = fmt.Errorf("PEM DECODE FAILED")
 		return
 	}
-	self.key = certificate.PublicKey
-	return
+	return NewVerifyDer(block.Bytes)
 }
 
-func (self *Verify_t) LoadCertDer(buf []byte) (err error) {
+func NewVerifyDer(buf []byte) (res Verify_t, err error) {
 	var certificate *x509.Certificate
 	if certificate, err = x509.ParseCertificate(buf); err != nil {
 		return
 	}
-	self.key = certificate.PublicKey
+	res.key = certificate.PublicKey
+	return
+}
+
+func NewVerifyKey(key crypto.PublicKey) (res Verify_t, err error) {
+	res.key = key
 	return
 }
 
@@ -194,21 +194,9 @@ type Hmac_t struct {
 	key []byte
 }
 
-func (self *Hmac_t) LoadKeyPem(buf []byte) (err error) {
-	self.key = append([]byte{}, buf...)
+func NewHmacKey(key []byte) (res Hmac_t, err error) {
+	res.key = append(res.key, key...)
 	return
-}
-
-func (self *Hmac_t) LoadKeyDer(buf []byte) (err error) {
-	return self.LoadKeyPem(buf)
-}
-
-func (self *Hmac_t) LoadCertPem(buf []byte) (err error) {
-	return self.LoadKeyPem(buf)
-}
-
-func (self *Hmac_t) LoadCertDer(buf []byte) (err error) {
-	return self.LoadKeyPem(buf)
 }
 
 func (self *Hmac_t) Name() string {

@@ -29,7 +29,7 @@ func SignVerify(t *testing.T, key string, cert string) {
 	var s Sign_t
 	buf, err := ioutil.ReadFile(key)
 	assert.NilError(t, err, "READ KEY")
-	err = s.LoadKeyPem(buf)
+	s, err = NewSignPem(buf)
 	assert.NilError(t, err, "LOAD KEY")
 	token, err := Sign(&s, hash_bits, payload)
 	assert.NilError(t, err, "JWT CREATE")
@@ -38,7 +38,7 @@ func SignVerify(t *testing.T, key string, cert string) {
 	var v Verify_t
 	buf, err = ioutil.ReadFile(cert)
 	assert.NilError(t, err, "READ CERT")
-	err = v.LoadCertPem(buf)
+	v, err = NewVerifyPem(buf)
 	assert.NilError(t, err, "LOAD CERT")
 	header, payload, signature, err := Parse(token.Bytes())
 	assert.NilError(t, err)
@@ -103,7 +103,7 @@ func Test10(t *testing.T) {
 	var h Hmac_t
 	buf, err := ioutil.ReadFile("test10.hmac")
 	assert.NilError(t, err, "READ KEY")
-	err = h.LoadKeyPem(buf)
+	h, err = NewHmacKey(buf)
 	assert.NilError(t, err, "LOAD KEY")
 	token, err := Sign(&h, hash_bits, payload)
 	assert.NilError(t, err, "JWT CREATE")
