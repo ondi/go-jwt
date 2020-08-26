@@ -65,7 +65,7 @@ func NewSignKey(key crypto.PrivateKey) (res Sign_t, err error) {
 	return
 }
 
-func (self *Sign_t) Name() string {
+func (self Sign_t) Name() string {
 	switch k := self.key.(type) {
 	case ed25519.PrivateKey:
 		return "ED"
@@ -78,7 +78,7 @@ func (self *Sign_t) Name() string {
 	}
 }
 
-func (self *Sign_t) Sign(bits int64, message []byte) (signature []byte, err error) {
+func (self Sign_t) Sign(bits int64, message []byte) (signature []byte, err error) {
 	switch k := self.key.(type) {
 	case ed25519.PrivateKey:
 		signature, err = k.Sign(rand.Reader, message, crypto.Hash(0))
@@ -143,7 +143,7 @@ func NewVerifyKey(key crypto.PublicKey) (res Verify_t, err error) {
 	return
 }
 
-func (self *Verify_t) Name() string {
+func (self Verify_t) Name() string {
 	switch k := self.key.(type) {
 	case ed25519.PublicKey:
 		return "ED"
@@ -156,7 +156,7 @@ func (self *Verify_t) Name() string {
 	}
 }
 
-func (self *Verify_t) Verify(bits int64, message []byte, signature []byte) (ok bool, err error) {
+func (self Verify_t) Verify(bits int64, message []byte, signature []byte) (ok bool, err error) {
 	switch k := self.key.(type) {
 	case ed25519.PublicKey:
 		ok = ed25519.Verify(k, message, signature)
@@ -199,11 +199,11 @@ func NewHmacKey(key []byte) (res Hmac_t, err error) {
 	return
 }
 
-func (self *Hmac_t) Name() string {
+func (self Hmac_t) Name() string {
 	return "HS"
 }
 
-func (self *Hmac_t) Sign(bits int64, message []byte) (signature []byte, err error) {
+func (self Hmac_t) Sign(bits int64, message []byte) (signature []byte, err error) {
 	if res := SHA(bits); res.Available() {
 		h := hmac.New(res.New, self.key)
 		h.Write(message)
@@ -214,7 +214,7 @@ func (self *Hmac_t) Sign(bits int64, message []byte) (signature []byte, err erro
 	return
 }
 
-func (self *Hmac_t) Verify(bits int64, message []byte, signature []byte) (ok bool, err error) {
+func (self Hmac_t) Verify(bits int64, message []byte, signature []byte) (ok bool, err error) {
 	if res := SHA(bits); res.Available() {
 		h := hmac.New(res.New, self.key)
 		h.Write(message)
