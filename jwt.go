@@ -13,34 +13,35 @@ import (
 )
 
 type Header_t struct {
-	Alg      string `json:"alg"`
-	HashBits int64  `json:"-"`
+	Alg  string `json:"alg"`
+	Bits int64  `json:"-"`
 }
 
-func Sign(s Signer, bits int64, payload map[string]interface{}) (res bytes.Buffer, err error) {
+func Sign(s Signer, bits int64, payload []byte) (res bytes.Buffer, err error) {
 	writer := base64.NewEncoder(base64.RawURLEncoding, &res)
-	if err = json.NewEncoder(writer).Encode(Header_t{Alg: s.Name() + strconv.FormatInt(bits, 10)}); err != nil {
-		return
-	}
+	json.NewEncoder(writer).Encode(Header_t{Alg: s.Name() + strconv.FormatInt(bits, 10)})
 	writer.Close()
+
 	res.WriteByte(byte('.'))
+
 	writer = base64.NewEncoder(base64.RawURLEncoding, &res)
-	if err = json.NewEncoder(writer).Encode(payload); err != nil {
-		return
-	}
+	writer.Write(payload)
 	writer.Close()
+
 	var temp []byte
 	if temp, err = s.Sign(bits, res.Bytes()); err != nil {
 		return
 	}
+
 	res.WriteByte(byte('.'))
+
 	writer = base64.NewEncoder(base64.RawURLEncoding, &res)
 	writer.Write(temp)
 	writer.Close()
 	return
 }
 
-func Parse(in []byte) (header Header_t, payload map[string]interface{}, signature []byte, err error) {
+func Parse(in []byte) (header Header_t, payload []byte, signature []byte, err error) {
 	ix_header := bytes.IndexByte(in, byte('.'))
 	if ix_header == -1 {
 		err = fmt.Errorf("FORMAT ERROR")
@@ -53,19 +54,22 @@ func Parse(in []byte) (header Header_t, payload map[string]interface{}, signatur
 		err = fmt.Errorf("ALG NOT SUPPORTED")
 		return
 	}
-	if header.HashBits, err = strconv.ParseInt(header.Alg[2:], 0, 64); err != nil {
+	if header.Bits, err = strconv.ParseInt(header.Alg[2:], 0, 64); err != nil {
 		return
 	}
-	ix_sign := bytes.LastIndexByte(in, byte('.'))
-	if ix_sign <= ix_header {
+	ix_payload := bytes.IndexByte(in[ix_header+1:], byte('.'))
+	if ix_payload == -1 {
 		err = fmt.Errorf("FORMAT ERROR")
 		return
 	}
-	signature = make([]byte, base64.RawURLEncoding.DecodedLen(len(in)-ix_sign-1))
-	if _, err = base64.RawURLEncoding.Decode(signature, in[ix_sign+1:]); err != nil {
+	payload = make([]byte, base64.RawURLEncoding.DecodedLen(ix_payload))
+	if _, err = base64.RawURLEncoding.Decode(payload, in[ix_header+1:ix_header+1+ix_payload]); err != nil {
 		return
 	}
-	err = json.NewDecoder(base64.NewDecoder(base64.RawURLEncoding, bytes.NewBuffer(in[ix_header+1:ix_sign]))).Decode(&payload)
+	signature = make([]byte, base64.RawURLEncoding.DecodedLen(len(in)-ix_header-1-ix_payload-1))
+	if _, err = base64.RawURLEncoding.Decode(signature, in[ix_header+1+ix_payload+1:]); err != nil {
+		return
+	}
 	return
 }
 
@@ -76,26 +80,33 @@ func Verify(v Verifier, hash_bits int64, signature []byte, in []byte) (ok bool, 
 	return
 }
 
-func Validate(payload map[string]interface{}, nbf int64, exp int64) (ok bool, err error) {
+func Validate(in []byte, nbf int64, exp int64) (res map[string]interface{}, err error) {
 	var ts float64
-	var temp interface{}
+	res = map[string]interface{}{}
+	if err = json.Unmarshal(in, &res); err != nil {
+		return
+	}
 	// not before
-	if temp, ok = payload["nbf"]; ok {
+	if temp, ok := res["nbf"]; ok {
 		if ts, ok = temp.(float64); !ok {
-			return false, fmt.Errorf("nbf format error")
+			err = fmt.Errorf("nbf format error")
+			return
 		}
 		if int64(ts) > nbf {
-			return false, fmt.Errorf("nbf")
+			err = fmt.Errorf("nbf")
+			return
 		}
 	}
 	// expiration
-	if temp, ok = payload["exp"]; ok {
+	if temp, ok := res["exp"]; ok {
 		if ts, ok = temp.(float64); !ok {
-			return false, fmt.Errorf("exp format error")
+			err = fmt.Errorf("exp format error")
+			return
 		}
 		if int64(ts) < exp {
-			return false, fmt.Errorf("exp")
+			err = fmt.Errorf("exp")
+			return
 		}
 	}
-	return true, nil
+	return
 }

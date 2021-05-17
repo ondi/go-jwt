@@ -5,6 +5,7 @@
 package jwt
 
 import (
+	"fmt"
 	"io/ioutil"
 	"testing"
 	"time"
@@ -16,22 +17,23 @@ func SignVerify(t *testing.T, key string, cert string) {
 	hash_bits := int64(256)
 
 	ts := time.Now()
-	payload := map[string]interface{}{}
-	// issued at
-	payload["iat"] = ts.Unix()
-	// not before
-	payload["nbf"] = ts.Unix()
-	// expiration
-	payload["exp"] = ts.Add(15 * time.Second).Unix()
-	// data
-	payload["lalala"] = "bububu"
+	input := fmt.Sprintf(`{
+"iat":%d,
+"nbf":%d,
+"exp":%d,
+"lalala":"bububu"
+}`,
+		ts.Unix(),
+		ts.Unix(),
+		ts.Add(15*time.Second).Unix(),
+	)
 
 	var s Sign_t
 	buf, err := ioutil.ReadFile(key)
 	assert.NilError(t, err, "READ KEY")
 	s, err = NewSignPem(buf)
 	assert.NilError(t, err, "LOAD KEY")
-	token, err := Sign(&s, hash_bits, payload)
+	token, err := Sign(&s, hash_bits, []byte(input))
 	assert.NilError(t, err, "JWT CREATE")
 	t.Logf("Sign: key=%v, alg=%v, bits=%v, out=%s", key, s.Name(), hash_bits, token.Bytes())
 
@@ -42,10 +44,10 @@ func SignVerify(t *testing.T, key string, cert string) {
 	assert.NilError(t, err, "LOAD CERT")
 	header, payload, signature, err := Parse(token.Bytes())
 	assert.NilError(t, err)
-	ok, err := Verify(&v, header.HashBits, signature, token.Bytes())
+	ok, err := Verify(&v, header.Bits, signature, token.Bytes())
 	assert.NilError(t, err, "VERIFY ERROR")
 	assert.Assert(t, ok, "VERIFY")
-	ok, err = Validate(payload, time.Now().Unix(), time.Now().Unix())
+	_, err = Validate(payload, time.Now().Unix(), time.Now().Unix())
 	assert.NilError(t, err, "VALIDATE")
 	t.Logf("Verify: cert=%v, alg=%v, bits=%v, payload=%v", cert, v.Name(), hash_bits, payload)
 }
@@ -90,31 +92,32 @@ func Test10(t *testing.T) {
 	hash_bits := int64(256)
 
 	ts := time.Now()
-	payload := map[string]interface{}{}
-	// issued at
-	payload["iat"] = ts.Unix()
-	// not before
-	payload["nbf"] = ts.Unix()
-	// expiration
-	payload["exp"] = ts.Add(15 * time.Second).Unix()
-	// data
-	payload["lalala"] = "bububu"
+	input := fmt.Sprintf(`{
+"iat":%d,
+"nbf":%d,
+"exp":%d,
+"lalala":"bububu"
+}`,
+		ts.Unix(),
+		ts.Unix(),
+		ts.Add(15*time.Second).Unix(),
+	)
 
 	var h Hmac_t
 	buf, err := ioutil.ReadFile("test10.hmac")
 	assert.NilError(t, err, "READ KEY")
 	h, err = NewHmacKey(buf)
 	assert.NilError(t, err, "LOAD KEY")
-	token, err := Sign(&h, hash_bits, payload)
+	token, err := Sign(&h, hash_bits, []byte(input))
 	assert.NilError(t, err, "JWT CREATE")
 	t.Logf("Sign: key=%v, alg=%v, bits=%v, out=%s", "test10.hmac", h.Name(), hash_bits, token.Bytes())
 
 	header, payload, signature, err := Parse(token.Bytes())
 	assert.NilError(t, err)
-	ok, err := Verify(&h, header.HashBits, signature, token.Bytes())
+	ok, err := Verify(&h, header.Bits, signature, token.Bytes())
 	assert.NilError(t, err, "VERIFY ERROR")
 	assert.Assert(t, ok, "VERIFY")
-	ok, err = Validate(payload, time.Now().Unix(), time.Now().Unix())
+	_, err = Validate(payload, time.Now().Unix(), time.Now().Unix())
 	assert.NilError(t, err, "VALIDATE")
 	t.Logf("Verify: cert=%v, alg=%v, bits=%v, payload=%v", "test10.hmac", h.Name(), hash_bits, payload)
 }
