@@ -42,13 +42,11 @@ func SignVerify(t *testing.T, key string, cert string) {
 	assert.NilError(t, err, "READ CERT")
 	v, err = NewVerifyPem(buf)
 	assert.NilError(t, err, "LOAD CERT")
-	header, payload, signature, err := Parse(token.Bytes())
+	_, bits, _, payload, signature, err := Parse(token.Bytes())
 	assert.NilError(t, err)
-	ok, err := Verify(&v, header.Bits, signature, token.Bytes())
+	ok, err := Verify(&v, bits, signature, token.Bytes())
 	assert.NilError(t, err, "VERIFY ERROR")
 	assert.Assert(t, ok, "VERIFY")
-	_, err = Validate(payload, time.Now().Unix(), time.Now().Unix())
-	assert.NilError(t, err, "VALIDATE")
 	t.Logf("Verify: cert=%v, alg=%v, bits=%v, payload=%v", cert, v.Name(), hash_bits, payload)
 }
 
@@ -112,26 +110,24 @@ func Test10(t *testing.T) {
 	assert.NilError(t, err, "JWT CREATE")
 	t.Logf("Sign: key=%v, alg=%v, bits=%v, out=%s", "test10.hmac", h.Name(), hash_bits, token.Bytes())
 
-	header, payload, signature, err := Parse(token.Bytes())
+	_, bits, _, payload, signature, err := Parse(token.Bytes())
 	assert.NilError(t, err)
-	ok, err := Verify(&h, header.Bits, signature, token.Bytes())
+	ok, err := Verify(&h, bits, signature, token.Bytes())
 	assert.NilError(t, err, "VERIFY ERROR")
 	assert.Assert(t, ok, "VERIFY")
-	_, err = Validate(payload, time.Now().Unix(), time.Now().Unix())
-	assert.NilError(t, err, "VALIDATE")
 	t.Logf("Verify: cert=%v, alg=%v, bits=%v, payload=%v", "test10.hmac", h.Name(), hash_bits, payload)
 }
 
 func Test11(t *testing.T) {
 	var err error
-	_, _, _, err = Parse(nil)
+	_, _, _, _, _, err = Parse(nil)
 	assert.Error(t, err, "FORMAT ERROR")
-	_, _, _, err = Parse([]byte{})
+	_, _, _, _, _, err = Parse([]byte{})
 	assert.Error(t, err, "FORMAT ERROR")
-	_, _, _, err = Parse([]byte("eyJhbGciOiJFRDI1NTE5In0K"))
+	_, _, _, _, _, err = Parse([]byte("eyJhbGciOiJFRDI1NTE5In0K"))
 	assert.Error(t, err, "FORMAT ERROR")
-	_, _, _, err = Parse([]byte("eyJhbGciOiJFRDI1NTE5In0K.eyJleHAiOjE1ODMyMzM2NjksImlhdCI6MTU4MzIzMzY1NCwibmJmIjoxNTgzMjMzNjU0fQo"))
+	_, _, _, _, _, err = Parse([]byte("eyJhbGciOiJFRDI1NTE5In0K.eyJleHAiOjE1ODMyMzM2NjksImlhdCI6MTU4MzIzMzY1NCwibmJmIjoxNTgzMjMzNjU0fQo"))
 	assert.Error(t, err, "FORMAT ERROR")
-	_, _, _, err = Parse([]byte("eyJhbGciOiJFRDI1NTE5In0K.eyJleHAiOjE1ODMyMzM2NjksImlhdCI6MTU4MzIzMzY1NCwibmJmIjoxNTgzMjMzNjU0fQo.YvtfzF8U6N-NmNj2imi3GcVK3fjpgEZ2dmbxDLugyDl1WW1bBK1eRCs2vQf73i7RYJrTWVFeaROodxDrc8_qBQ"))
+	_, _, _, _, _, err = Parse([]byte("eyJhbGciOiJFRDI1NTE5In0K.eyJleHAiOjE1ODMyMzM2NjksImlhdCI6MTU4MzIzMzY1NCwibmJmIjoxNTgzMjMzNjU0fQo.YvtfzF8U6N-NmNj2imi3GcVK3fjpgEZ2dmbxDLugyDl1WW1bBK1eRCs2vQf73i7RYJrTWVFeaROodxDrc8_qBQ"))
 	assert.NilError(t, err)
 }
