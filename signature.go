@@ -120,21 +120,35 @@ type Verify_t struct {
 	key crypto.PublicKey
 }
 
-func NewVerifyPem(buf []byte) (res Verify_t, err error) {
+func NewVerifyCertPem(buf []byte) (res Verify_t, err error) {
 	block, _ := pem.Decode(buf)
 	if block == nil {
 		err = fmt.Errorf("PEM DECODE FAILED")
 		return
 	}
-	return NewVerifyDer(block.Bytes)
+	return NewVerifyCertDer(block.Bytes)
 }
 
-func NewVerifyDer(buf []byte) (res Verify_t, err error) {
+func NewVerifyCertDer(buf []byte) (res Verify_t, err error) {
 	var certificate *x509.Certificate
 	if certificate, err = x509.ParseCertificate(buf); err != nil {
 		return
 	}
 	res.key = certificate.PublicKey
+	return
+}
+
+func NewVerifyKeyPem(buf []byte) (res Verify_t, err error) {
+	block, _ := pem.Decode(buf)
+	if block == nil {
+		err = fmt.Errorf("PEM DECODE FAILED")
+		return
+	}
+	return NewVerifyKeyDer(block.Bytes)
+}
+
+func NewVerifyKeyDer(buf []byte) (res Verify_t, err error) {
+	res.key, err = x509.ParsePKIXPublicKey(buf)
 	return
 }
 

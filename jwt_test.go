@@ -40,7 +40,7 @@ func SignVerify(t *testing.T, key string, cert string) {
 	var v Verify_t
 	buf, err = ioutil.ReadFile(cert)
 	assert.NilError(t, err, "READ CERT")
-	v, err = NewVerifyPem(buf)
+	v, err = NewVerifyCertPem(buf)
 	assert.NilError(t, err, "LOAD CERT")
 	_, bits, _, payload, signature, err := Parse(token.Bytes())
 	assert.NilError(t, err)
