@@ -24,7 +24,7 @@ type Signer interface {
 
 type Verifier interface {
 	Name() string
-	Verify(bits int64, message []byte, signature []byte) (ok bool, err error)
+	Verify(bits int64, message []byte, signature []byte) (err error)
 }
 
 func SHA(bits int64) (res crypto.Hash) {
@@ -170,31 +170,33 @@ func (self Verify_t) Name() string {
 	}
 }
 
-func (self Verify_t) Verify(bits int64, message []byte, signature []byte) (ok bool, err error) {
+func (self Verify_t) Verify(bits int64, message []byte, signature []byte) (err error) {
 	switch k := self.key.(type) {
 	case ed25519.PublicKey:
-		ok = ed25519.Verify(k, message, signature)
+		if !ed25519.Verify(k, message, signature) {
+			err = fmt.Errorf("VERIFICATION FAILED")
+		}
 	case *rsa.PublicKey:
 		if res := SHA(bits); res.Available() {
 			h := res.New()
 			h.Write(message)
-			if err = rsa.VerifyPKCS1v15(k, res, h.Sum(nil), signature); err == nil {
-				ok = true
-			}
+			err = rsa.VerifyPKCS1v15(k, res, h.Sum(nil), signature)
 		} else {
 			err = fmt.Errorf("HASH NOT AVAILABLE %v", bits)
 		}
 	case *ecdsa.PublicKey:
 		CurveBytes := (k.Params().BitSize + 7) / 8
 		if len(signature) < 2*CurveBytes {
-			return false, fmt.Errorf("SIGNATURE LENGTH")
+			return fmt.Errorf("SIGNATURE LENGTH")
 		}
 		r := big.NewInt(0).SetBytes(signature[:CurveBytes])
 		s := big.NewInt(0).SetBytes(signature[CurveBytes:])
 		if res := SHA(bits); res.Available() {
 			h := res.New()
 			h.Write(message)
-			ok = ecdsa.Verify(k, h.Sum(nil), r, s)
+			if !ecdsa.Verify(k, h.Sum(nil), r, s) {
+				err = fmt.Errorf("VERIFICATION FAILED")
+			}
 		} else {
 			err = fmt.Errorf("HASH NOT AVAILABLE %v", bits)
 		}
@@ -228,11 +230,13 @@ func (self Hmac_t) Sign(bits int64, message []byte) (signature []byte, err error
 	return
 }
 
-func (self Hmac_t) Verify(bits int64, message []byte, signature []byte) (ok bool, err error) {
+func (self Hmac_t) Verify(bits int64, message []byte, signature []byte) (err error) {
 	if res := SHA(bits); res.Available() {
 		h := hmac.New(res.New, self.key)
 		h.Write(message)
-		ok = hmac.Equal(h.Sum(nil), signature)
+		if !hmac.Equal(h.Sum(nil), signature) {
+			err = fmt.Errorf("VERIFICATION FAILED")
+		}
 	} else {
 		err = fmt.Errorf("HASH NOT AVAILABLE %v", bits)
 	}

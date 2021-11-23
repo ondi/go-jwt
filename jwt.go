@@ -37,7 +37,7 @@ func Sign(s Signer, bits int64, payload []byte) (res bytes.Buffer, err error) {
 
 func Parse(in []byte) (alg string, bits int64, header []byte, payload []byte, signature []byte, err error) {
 	ix_header := bytes.IndexByte(in, byte('.'))
-	if ix_header < 10 {
+	if ix_header == -1 {
 		err = fmt.Errorf("FORMAT ERROR")
 		return
 	}
@@ -85,9 +85,11 @@ func Parse(in []byte) (alg string, bits int64, header []byte, payload []byte, si
 	return
 }
 
-func Verify(v Verifier, hash_bits int64, signature []byte, in []byte) (ok bool, err error) {
+func Verify(v Verifier, hash_bits int64, signature []byte, in []byte) (err error) {
 	if ix_sign := bytes.LastIndexByte(in, byte('.')); ix_sign > -1 {
-		ok, err = v.Verify(hash_bits, in[:ix_sign], signature)
+		err = v.Verify(hash_bits, in[:ix_sign], signature)
+	} else {
+		err = fmt.Errorf("SIGNATURE NOT FOUND")
 	}
 	return
 }
