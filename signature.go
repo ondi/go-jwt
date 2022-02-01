@@ -44,7 +44,7 @@ type Sign_t struct {
 	key crypto.PrivateKey
 }
 
-func NewSignPem(buf []byte) (res Sign_t, err error) {
+func NewSignPem(buf []byte) (res Signer, err error) {
 	block, _ := pem.Decode(buf)
 	if block == nil {
 		err = fmt.Errorf("PEM DECODE FAILED")
@@ -53,16 +53,16 @@ func NewSignPem(buf []byte) (res Sign_t, err error) {
 	return NewSignDer(block.Bytes)
 }
 
-func NewSignDer(buf []byte) (res Sign_t, err error) {
-	if res.key, err = x509.ParsePKCS8PrivateKey(buf); err != nil {
-		res.key, err = x509.ParseECPrivateKey(buf)
+func NewSignDer(buf []byte) (Signer, error) {
+	key, err := x509.ParsePKCS8PrivateKey(buf)
+	if err != nil {
+		key, err = x509.ParseECPrivateKey(buf)
 	}
-	return
+	return Sign_t{key: key}, err
 }
 
-func NewSignKey(key crypto.PrivateKey) (res Sign_t, err error) {
-	res.key = key
-	return
+func NewSignKey(key crypto.PrivateKey) (Signer, error) {
+	return Sign_t{key: key}, nil
 }
 
 func (self Sign_t) Name() string {

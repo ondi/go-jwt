@@ -29,13 +29,13 @@ func SignVerify(t *testing.T, key string, cert string) {
 		ts.Add(15*time.Second).Unix(),
 	)
 
-	var s Sign_t
+	var s Signer
 	buf, err := ioutil.ReadFile(key)
 	assert.NilError(t, err, "READ KEY")
 	s, err = NewSignPem(buf)
 	assert.NilError(t, err, "LOAD KEY")
 	var token bytes.Buffer
-	err = Sign(&s, hash_bits, []byte(input), &token)
+	err = Sign(s, hash_bits, []byte(input), &token)
 	assert.NilError(t, err, "JWT CREATE")
 	t.Logf("Sign: key=%v, alg=%v, bits=%v, out=%s", key, s.Name(), hash_bits, token.Bytes())
 
