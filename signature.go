@@ -17,14 +17,32 @@ import (
 	"math/big"
 )
 
-type Signer interface {
+type AName interface {
 	Name() string
+}
+
+type ASign interface {
 	Sign(bits int64, message []byte) (signature []byte, err error)
 }
 
-type Verifier interface {
-	Name() string
+type AVerify interface {
 	Verify(bits int64, message []byte, signature []byte) (err error)
+}
+
+type Signer interface {
+	AName
+	ASign
+}
+
+type Verifier interface {
+	AName
+	AVerify
+}
+
+type Hmac interface {
+	AName
+	ASign
+	AVerify
 }
 
 func SHA(bits int64) (res crypto.Hash) {
@@ -120,7 +138,7 @@ type Verify_t struct {
 	key crypto.PublicKey
 }
 
-func NewVerifyCertPem(buf []byte) (res Verify_t, err error) {
+func NewVerifyCertPem(buf []byte) (res Verifier, err error) {
 	block, _ := pem.Decode(buf)
 	if block == nil {
 		err = fmt.Errorf("PEM DECODE FAILED")
@@ -129,16 +147,15 @@ func NewVerifyCertPem(buf []byte) (res Verify_t, err error) {
 	return NewVerifyCertDer(block.Bytes)
 }
 
-func NewVerifyCertDer(buf []byte) (res Verify_t, err error) {
-	var certificate *x509.Certificate
-	if certificate, err = x509.ParseCertificate(buf); err != nil {
+func NewVerifyCertDer(buf []byte) (res Verifier, err error) {
+	certificate, err := x509.ParseCertificate(buf)
+	if err != nil {
 		return
 	}
-	res.key = certificate.PublicKey
-	return
+	return Verify_t{key: certificate.PublicKey}, nil
 }
 
-func NewVerifyKeyPem(buf []byte) (res Verify_t, err error) {
+func NewVerifyKeyPem(buf []byte) (res Verifier, err error) {
 	block, _ := pem.Decode(buf)
 	if block == nil {
 		err = fmt.Errorf("PEM DECODE FAILED")
@@ -147,14 +164,16 @@ func NewVerifyKeyPem(buf []byte) (res Verify_t, err error) {
 	return NewVerifyKeyDer(block.Bytes)
 }
 
-func NewVerifyKeyDer(buf []byte) (res Verify_t, err error) {
-	res.key, err = x509.ParsePKIXPublicKey(buf)
-	return
+func NewVerifyKeyDer(buf []byte) (res Verifier, err error) {
+	key, err := x509.ParsePKIXPublicKey(buf)
+	if err != nil {
+		return
+	}
+	return Verify_t{key: key}, err
 }
 
-func NewVerifyKey(key crypto.PublicKey) (res Verify_t, err error) {
-	res.key = key
-	return
+func NewVerifyKey(key crypto.PublicKey) (res Verifier, err error) {
+	return Verify_t{key: key}, nil
 }
 
 func (self Verify_t) Name() string {
@@ -210,9 +229,8 @@ type Hmac_t struct {
 	key []byte
 }
 
-func NewHmacKey(key []byte) (res Hmac_t, err error) {
-	res.key = append(res.key, key...)
-	return
+func NewHmacKey(key []byte) (res Hmac, err error) {
+	return Hmac_t{key: append([]byte{}, key...)}, nil
 }
 
 func (self Hmac_t) Name() string {
