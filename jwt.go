@@ -11,25 +11,25 @@ import (
 	"strconv"
 )
 
-func Sign(s Signer, bits int64, payload []byte) (res bytes.Buffer, err error) {
-	writer := base64.NewEncoder(base64.RawURLEncoding, &res)
-	writer.Write([]byte(`{"alg":"` + s.Name() + strconv.FormatInt(bits, 10) + `"}`))
+func Sign(sign Signer, bits int64, payload []byte, out *bytes.Buffer) (err error) {
+	writer := base64.NewEncoder(base64.RawURLEncoding, out)
+	writer.Write([]byte(`{"alg":"` + sign.Name() + strconv.FormatInt(bits, 10) + `"}`))
 	writer.Close()
 
-	res.WriteByte(byte('.'))
+	out.WriteByte(byte('.'))
 
-	writer = base64.NewEncoder(base64.RawURLEncoding, &res)
+	writer = base64.NewEncoder(base64.RawURLEncoding, out)
 	writer.Write(payload)
 	writer.Close()
 
 	var temp []byte
-	if temp, err = s.Sign(bits, res.Bytes()); err != nil {
+	if temp, err = sign.Sign(bits, out.Bytes()); err != nil {
 		return
 	}
 
-	res.WriteByte(byte('.'))
+	out.WriteByte(byte('.'))
 
-	writer = base64.NewEncoder(base64.RawURLEncoding, &res)
+	writer = base64.NewEncoder(base64.RawURLEncoding, out)
 	writer.Write(temp)
 	writer.Close()
 	return

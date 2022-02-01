@@ -5,6 +5,7 @@
 package jwt
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"testing"
@@ -33,7 +34,8 @@ func SignVerify(t *testing.T, key string, cert string) {
 	assert.NilError(t, err, "READ KEY")
 	s, err = NewSignPem(buf)
 	assert.NilError(t, err, "LOAD KEY")
-	token, err := Sign(&s, hash_bits, []byte(input))
+	var token bytes.Buffer
+	err = Sign(&s, hash_bits, []byte(input), &token)
 	assert.NilError(t, err, "JWT CREATE")
 	t.Logf("Sign: key=%v, alg=%v, bits=%v, out=%s", key, s.Name(), hash_bits, token.Bytes())
 
@@ -105,7 +107,8 @@ func Test10(t *testing.T) {
 	assert.NilError(t, err, "READ KEY")
 	h, err = NewHmacKey(buf)
 	assert.NilError(t, err, "LOAD KEY")
-	token, err := Sign(&h, hash_bits, []byte(input))
+	var token bytes.Buffer
+	err = Sign(&h, hash_bits, []byte(input), &token)
 	assert.NilError(t, err, "JWT CREATE")
 	t.Logf("Sign: key=%v, alg=%v, bits=%v, out=%s", "test10.hmac", h.Name(), hash_bits, token.Bytes())
 
