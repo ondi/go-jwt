@@ -17,6 +17,12 @@ import (
 	"math/big"
 )
 
+var VERIFICATION_FAILED = fmt.Errorf("VERIFICATION FAILED")
+var PEM_DECODE_FAILED = fmt.Errorf("PEM DECODE FAILED")
+var HASH_NOT_AVAILABLE = fmt.Errorf("HASH NOT AVAILABLE")
+var KEY_NOT_SUPPORTED = fmt.Errorf("KEY NOT SUPPORTED:")
+var SIGNATURE_LENGTH = fmt.Errorf("SIGNATURE LENGTH")
+
 type AName interface {
 	Name() string
 }
@@ -65,7 +71,7 @@ type Sign_t struct {
 func NewSignPem(buf []byte) (res Signer, err error) {
 	block, _ := pem.Decode(buf)
 	if block == nil {
-		err = fmt.Errorf("PEM DECODE FAILED")
+		err = PEM_DECODE_FAILED
 		return
 	}
 	return NewSignDer(block.Bytes)
@@ -84,7 +90,7 @@ func NewSignKey(key crypto.PrivateKey) (Signer, error) {
 }
 
 func (self Sign_t) Name() string {
-	switch k := self.key.(type) {
+	switch self.key.(type) {
 	case ed25519.PrivateKey:
 		return "ED"
 	case *rsa.PrivateKey:
@@ -92,7 +98,7 @@ func (self Sign_t) Name() string {
 	case *ecdsa.PrivateKey:
 		return "ES"
 	default:
-		return fmt.Sprintf("KEY NOT SUPPORTED: %T", k)
+		return "KEY NOT SUPPORTED"
 	}
 }
 
@@ -106,7 +112,7 @@ func (self Sign_t) Sign(bits int64, message []byte) (signature []byte, err error
 			h.Write(message)
 			signature, err = k.Sign(rand.Reader, h.Sum(nil), res)
 		} else {
-			err = fmt.Errorf("HASH NOT AVAILABLE %v", bits)
+			err = HASH_NOT_AVAILABLE
 		}
 	case *ecdsa.PrivateKey:
 		if res := SHA(bits); res.Available() {
@@ -126,10 +132,10 @@ func (self Sign_t) Sign(bits int64, message []byte) (signature []byte, err error
 			}
 			signature = append(signature, s.Bytes()...)
 		} else {
-			err = fmt.Errorf("HASH NOT AVAILABLE %v", bits)
+			err = HASH_NOT_AVAILABLE
 		}
 	default:
-		err = fmt.Errorf("KEY NOT SUPPORTED: %T", k)
+		err = KEY_NOT_SUPPORTED
 	}
 	return
 }
@@ -141,7 +147,7 @@ type Verify_t struct {
 func NewVerifyCertPem(buf []byte) (res Verifier, err error) {
 	block, _ := pem.Decode(buf)
 	if block == nil {
-		err = fmt.Errorf("PEM DECODE FAILED")
+		err = PEM_DECODE_FAILED
 		return
 	}
 	return NewVerifyCertDer(block.Bytes)
@@ -158,7 +164,7 @@ func NewVerifyCertDer(buf []byte) (res Verifier, err error) {
 func NewVerifyKeyPem(buf []byte) (res Verifier, err error) {
 	block, _ := pem.Decode(buf)
 	if block == nil {
-		err = fmt.Errorf("PEM DECODE FAILED")
+		err = PEM_DECODE_FAILED
 		return
 	}
 	return NewVerifyKeyDer(block.Bytes)
@@ -193,7 +199,7 @@ func (self Verify_t) Verify(bits int64, message []byte, signature []byte) (err e
 	switch k := self.key.(type) {
 	case ed25519.PublicKey:
 		if !ed25519.Verify(k, message, signature) {
-			err = fmt.Errorf("VERIFICATION FAILED")
+			err = VERIFICATION_FAILED
 		}
 	case *rsa.PublicKey:
 		if res := SHA(bits); res.Available() {
@@ -201,12 +207,12 @@ func (self Verify_t) Verify(bits int64, message []byte, signature []byte) (err e
 			h.Write(message)
 			err = rsa.VerifyPKCS1v15(k, res, h.Sum(nil), signature)
 		} else {
-			err = fmt.Errorf("HASH NOT AVAILABLE %v", bits)
+			err = HASH_NOT_AVAILABLE
 		}
 	case *ecdsa.PublicKey:
 		CurveBytes := (k.Params().BitSize + 7) / 8
 		if len(signature) < 2*CurveBytes {
-			return fmt.Errorf("SIGNATURE LENGTH")
+			return SIGNATURE_LENGTH
 		}
 		r := big.NewInt(0).SetBytes(signature[:CurveBytes])
 		s := big.NewInt(0).SetBytes(signature[CurveBytes:])
@@ -214,13 +220,13 @@ func (self Verify_t) Verify(bits int64, message []byte, signature []byte) (err e
 			h := res.New()
 			h.Write(message)
 			if !ecdsa.Verify(k, h.Sum(nil), r, s) {
-				err = fmt.Errorf("VERIFICATION FAILED")
+				err = VERIFICATION_FAILED
 			}
 		} else {
-			err = fmt.Errorf("HASH NOT AVAILABLE %v", bits)
+			err = HASH_NOT_AVAILABLE
 		}
 	default:
-		err = fmt.Errorf("KEY NOT SUPPORTED: %T", k)
+		err = KEY_NOT_SUPPORTED
 	}
 	return
 }
@@ -243,7 +249,7 @@ func (self Hmac_t) Sign(bits int64, message []byte) (signature []byte, err error
 		h.Write(message)
 		signature = h.Sum(nil)
 	} else {
-		err = fmt.Errorf("HASH NOT AVAILABLE %v", bits)
+		err = HASH_NOT_AVAILABLE
 	}
 	return
 }
@@ -253,10 +259,10 @@ func (self Hmac_t) Verify(bits int64, message []byte, signature []byte) (err err
 		h := hmac.New(res.New, self.key)
 		h.Write(message)
 		if !hmac.Equal(h.Sum(nil), signature) {
-			err = fmt.Errorf("VERIFICATION FAILED")
+			err = VERIFICATION_FAILED
 		}
 	} else {
-		err = fmt.Errorf("HASH NOT AVAILABLE %v", bits)
+		err = HASH_NOT_AVAILABLE
 	}
 	return
 }

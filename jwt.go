@@ -11,6 +11,10 @@ import (
 	"strconv"
 )
 
+var FORMAT_ERROR = fmt.Errorf("FORMAT ERROR")
+var ALG_ERROR = fmt.Errorf("ALG ERROR")
+var NO_SIGNATURE = fmt.Errorf("NO SIGNATURE")
+
 func Sign(sign Signer, bits int64, payload []byte, out *bytes.Buffer) (err error) {
 	writer := base64.NewEncoder(base64.RawURLEncoding, out)
 	writer.Write([]byte(`{"alg":"` + sign.Name() + strconv.FormatInt(bits, 10) + `"}`))
@@ -38,7 +42,7 @@ func Sign(sign Signer, bits int64, payload []byte, out *bytes.Buffer) (err error
 func Parse(in []byte) (alg string, bits int64, header []byte, payload []byte, signature []byte, err error) {
 	ix_header := bytes.IndexByte(in, byte('.'))
 	if ix_header == -1 {
-		err = fmt.Errorf("FORMAT ERROR")
+		err = FORMAT_ERROR
 		return
 	}
 	header = make([]byte, base64.RawURLEncoding.DecodedLen(ix_header))
@@ -47,23 +51,23 @@ func Parse(in []byte) (alg string, bits int64, header []byte, payload []byte, si
 	}
 	ix_alg := bytes.Index(header, []byte(`"alg"`))
 	if ix_alg == -1 {
-		err = fmt.Errorf("ALG ERROR")
+		err = ALG_ERROR
 		return
 	}
 	ix_alg += 6
 	ix_alg1 := bytes.Index(header[ix_alg:], []byte(`"`))
 	if ix_alg1 == -1 {
-		err = fmt.Errorf("ALG ERROR")
+		err = ALG_ERROR
 		return
 	}
 	ix_alg2 := bytes.Index(header[ix_alg+ix_alg1+1:], []byte(`"`))
 	if ix_alg2 == -1 {
-		err = fmt.Errorf("ALG ERROR")
+		err = ALG_ERROR
 		return
 	}
 	alg = string(header[ix_alg+ix_alg1+1 : ix_alg+ix_alg1+ix_alg2+1])
 	if len(alg) < 5 {
-		err = fmt.Errorf("ALG ERROR")
+		err = ALG_ERROR
 		return
 	}
 	if bits, err = strconv.ParseInt(alg[2:], 0, 64); err != nil {
@@ -71,7 +75,7 @@ func Parse(in []byte) (alg string, bits int64, header []byte, payload []byte, si
 	}
 	ix_payload := bytes.IndexByte(in[ix_header+1:], byte('.'))
 	if ix_payload == -1 {
-		err = fmt.Errorf("FORMAT ERROR")
+		err = FORMAT_ERROR
 		return
 	}
 	payload = make([]byte, base64.RawURLEncoding.DecodedLen(ix_payload))
@@ -89,7 +93,7 @@ func Verify(v Verifier, hash_bits int64, signature []byte, in []byte) (err error
 	if ix_sign := bytes.LastIndexByte(in, byte('.')); ix_sign > -1 {
 		err = v.Verify(hash_bits, in[:ix_sign], signature)
 	} else {
-		err = fmt.Errorf("SIGNATURE NOT FOUND")
+		err = NO_SIGNATURE
 	}
 	return
 }
