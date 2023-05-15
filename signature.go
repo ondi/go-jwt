@@ -13,15 +13,18 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"math/big"
 )
 
-var VERIFICATION_FAILED = fmt.Errorf("VERIFICATION FAILED")
-var PEM_DECODE_FAILED = fmt.Errorf("PEM DECODE FAILED")
-var HASH_NOT_AVAILABLE = fmt.Errorf("HASH NOT AVAILABLE")
-var KEY_NOT_SUPPORTED = fmt.Errorf("KEY NOT SUPPORTED:")
-var SIGNATURE_LENGTH = fmt.Errorf("SIGNATURE LENGTH")
+var (
+	ERROR_VERIFICATION_FAILED = errors.New("VERIFICATION FAILED")
+	ERROR_PEM_DECODE_FAILED   = errors.New("PEM DECODE FAILED")
+	ERROR_HASH_NOT_AVAILABLE  = errors.New("HASH NOT AVAILABLE")
+	ERROR_KEY_NOT_SUPPORTED   = errors.New("KEY NOT SUPPORTED")
+	ERROR_SIGNATURE_LENGTH    = errors.New("SIGNATURE LENGTH")
+)
 
 type AName interface {
 	Name() string
@@ -71,7 +74,7 @@ type Sign_t struct {
 func NewSignPem(buf []byte) (res Signer, err error) {
 	block, _ := pem.Decode(buf)
 	if block == nil {
-		err = PEM_DECODE_FAILED
+		err = ERROR_PEM_DECODE_FAILED
 		return
 	}
 	return NewSignDer(block.Bytes)
@@ -112,7 +115,7 @@ func (self Sign_t) Sign(bits int64, message []byte) (signature []byte, err error
 			h.Write(message)
 			signature, err = k.Sign(rand.Reader, h.Sum(nil), res)
 		} else {
-			err = HASH_NOT_AVAILABLE
+			err = ERROR_HASH_NOT_AVAILABLE
 		}
 	case *ecdsa.PrivateKey:
 		if res := SHA(bits); res.Available() {
@@ -132,10 +135,10 @@ func (self Sign_t) Sign(bits int64, message []byte) (signature []byte, err error
 			}
 			signature = append(signature, s.Bytes()...)
 		} else {
-			err = HASH_NOT_AVAILABLE
+			err = ERROR_HASH_NOT_AVAILABLE
 		}
 	default:
-		err = KEY_NOT_SUPPORTED
+		err = ERROR_KEY_NOT_SUPPORTED
 	}
 	return
 }
@@ -147,7 +150,7 @@ type Verify_t struct {
 func NewVerifyCertPem(buf []byte) (res Verifier, err error) {
 	block, _ := pem.Decode(buf)
 	if block == nil {
-		err = PEM_DECODE_FAILED
+		err = ERROR_PEM_DECODE_FAILED
 		return
 	}
 	return NewVerifyCertDer(block.Bytes)
@@ -164,7 +167,7 @@ func NewVerifyCertDer(buf []byte) (res Verifier, err error) {
 func NewVerifyKeyPem(buf []byte) (res Verifier, err error) {
 	block, _ := pem.Decode(buf)
 	if block == nil {
-		err = PEM_DECODE_FAILED
+		err = ERROR_PEM_DECODE_FAILED
 		return
 	}
 	return NewVerifyKeyDer(block.Bytes)
@@ -199,7 +202,7 @@ func (self Verify_t) Verify(bits int64, message []byte, signature []byte) (err e
 	switch k := self.key.(type) {
 	case ed25519.PublicKey:
 		if !ed25519.Verify(k, message, signature) {
-			err = VERIFICATION_FAILED
+			err = ERROR_VERIFICATION_FAILED
 		}
 	case *rsa.PublicKey:
 		if res := SHA(bits); res.Available() {
@@ -207,12 +210,12 @@ func (self Verify_t) Verify(bits int64, message []byte, signature []byte) (err e
 			h.Write(message)
 			err = rsa.VerifyPKCS1v15(k, res, h.Sum(nil), signature)
 		} else {
-			err = HASH_NOT_AVAILABLE
+			err = ERROR_HASH_NOT_AVAILABLE
 		}
 	case *ecdsa.PublicKey:
 		CurveBytes := (k.Params().BitSize + 7) / 8
 		if len(signature) < 2*CurveBytes {
-			return SIGNATURE_LENGTH
+			return ERROR_SIGNATURE_LENGTH
 		}
 		r := big.NewInt(0).SetBytes(signature[:CurveBytes])
 		s := big.NewInt(0).SetBytes(signature[CurveBytes:])
@@ -220,13 +223,13 @@ func (self Verify_t) Verify(bits int64, message []byte, signature []byte) (err e
 			h := res.New()
 			h.Write(message)
 			if !ecdsa.Verify(k, h.Sum(nil), r, s) {
-				err = VERIFICATION_FAILED
+				err = ERROR_VERIFICATION_FAILED
 			}
 		} else {
-			err = HASH_NOT_AVAILABLE
+			err = ERROR_HASH_NOT_AVAILABLE
 		}
 	default:
-		err = KEY_NOT_SUPPORTED
+		err = ERROR_KEY_NOT_SUPPORTED
 	}
 	return
 }
@@ -249,7 +252,7 @@ func (self Hmac_t) Sign(bits int64, message []byte) (signature []byte, err error
 		h.Write(message)
 		signature = h.Sum(nil)
 	} else {
-		err = HASH_NOT_AVAILABLE
+		err = ERROR_HASH_NOT_AVAILABLE
 	}
 	return
 }
@@ -259,10 +262,10 @@ func (self Hmac_t) Verify(bits int64, message []byte, signature []byte) (err err
 		h := hmac.New(res.New, self.key)
 		h.Write(message)
 		if !hmac.Equal(h.Sum(nil), signature) {
-			err = VERIFICATION_FAILED
+			err = ERROR_VERIFICATION_FAILED
 		}
 	} else {
-		err = HASH_NOT_AVAILABLE
+		err = ERROR_HASH_NOT_AVAILABLE
 	}
 	return
 }
