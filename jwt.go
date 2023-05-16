@@ -11,10 +11,7 @@ import (
 	"strconv"
 )
 
-var (
-	ERROR_FORMAT = errors.New("FORMAT ERROR")
-	ERROR_ALG    = errors.New("ALG ERROR")
-)
+var ERROR_FORMAT = errors.New("FORMAT ERROR")
 
 func Sign(sign Signer, bits int64, payload []byte, out *bytes.Buffer) (err error) {
 	writer := base64.NewEncoder(base64.RawURLEncoding, out)
@@ -52,23 +49,23 @@ func Parse(in []byte) (alg string, bits int64, header []byte, payload []byte, si
 	}
 	ix_alg := bytes.Index(header, []byte(`"alg"`))
 	if ix_alg == -1 {
-		err = ERROR_ALG
+		err = ERROR_FORMAT
 		return
 	}
 	ix_alg += 6
 	ix_alg1 := bytes.Index(header[ix_alg:], []byte(`"`))
 	if ix_alg1 == -1 {
-		err = ERROR_ALG
+		err = ERROR_FORMAT
 		return
 	}
 	ix_alg2 := bytes.Index(header[ix_alg+ix_alg1+1:], []byte(`"`))
 	if ix_alg2 == -1 {
-		err = ERROR_ALG
+		err = ERROR_FORMAT
 		return
 	}
 	alg = string(header[ix_alg+ix_alg1+1 : ix_alg+ix_alg1+ix_alg2+1])
 	if len(alg) < 5 {
-		err = ERROR_ALG
+		err = ERROR_FORMAT
 		return
 	}
 	if bits, err = strconv.ParseInt(alg[2:], 0, 64); err != nil {
