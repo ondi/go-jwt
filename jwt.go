@@ -8,32 +8,36 @@ import (
 	"bytes"
 	"encoding/base64"
 	"errors"
+	"io"
 	"strconv"
 )
 
 var ERROR_FORMAT = errors.New("FORMAT ERROR")
 
 func Sign(sign Signer, bits int64, payload []byte, out *bytes.Buffer) (err error) {
-	writer := base64.NewEncoder(base64.RawURLEncoding, out)
-	writer.Write([]byte(`{"alg":"` + sign.Name() + strconv.FormatInt(bits, 10) + `"}`))
-	writer.Close()
+	w := base64.NewEncoder(base64.RawURLEncoding, out)
+	io.WriteString(w, `{"alg":"`)
+	io.WriteString(w, sign.Name())
+	io.WriteString(w, strconv.FormatInt(bits, 10))
+	io.WriteString(w, `"}`)
+	w.Close()
 
-	out.WriteByte(byte('.'))
+	out.WriteByte('.')
 
-	writer = base64.NewEncoder(base64.RawURLEncoding, out)
-	writer.Write(payload)
-	writer.Close()
+	w = base64.NewEncoder(base64.RawURLEncoding, out)
+	w.Write(payload)
+	w.Close()
 
-	var temp []byte
-	if temp, err = sign.Sign(bits, out.Bytes()); err != nil {
+	temp, err := sign.Sign(bits, out.Bytes())
+	if err != nil {
 		return
 	}
 
-	out.WriteByte(byte('.'))
+	out.WriteByte('.')
 
-	writer = base64.NewEncoder(base64.RawURLEncoding, out)
-	writer.Write(temp)
-	writer.Close()
+	w = base64.NewEncoder(base64.RawURLEncoding, out)
+	w.Write(temp)
+	w.Close()
 	return
 }
 
