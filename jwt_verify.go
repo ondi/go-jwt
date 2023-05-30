@@ -70,38 +70,34 @@ func (self Verify_t) Name() string {
 	}
 }
 
-func (self Verify_t) Verify(bits int64, message []byte, signature []byte) (err error) {
+func (self Verify_t) Verify(bits int64, message []byte, signature []byte) (ok bool) {
 	switch k := self.key.(type) {
 	case ed25519.PublicKey:
-		if !ed25519.Verify(k, message, signature) {
-			err = ERROR_VERIFICATION_FAILED
-		}
+		ok = ed25519.Verify(k, message, signature)
 	case *rsa.PublicKey:
-		if res := SHA(bits); res.Available() {
-			h := res.New()
-			h.Write(message)
-			err = rsa.VerifyPKCS1v15(k, res, h.Sum(nil), signature)
-		} else {
-			err = ERROR_HASH_NOT_AVAILABLE
+		res := SHA(bits)
+		if ok = res.Available(); !ok {
+			return
+		}
+		h := res.New()
+		h.Write(message)
+		if err := rsa.VerifyPKCS1v15(k, res, h.Sum(nil), signature); err != nil {
+			return false
 		}
 	case *ecdsa.PublicKey:
 		CurveBytes := (k.Params().BitSize + 7) / 8
 		if len(signature) < 2*CurveBytes {
-			return ERROR_SIGNATURE_LENGTH
+			return
 		}
 		r := big.NewInt(0).SetBytes(signature[:CurveBytes])
 		s := big.NewInt(0).SetBytes(signature[CurveBytes:])
-		if res := SHA(bits); res.Available() {
-			h := res.New()
-			h.Write(message)
-			if !ecdsa.Verify(k, h.Sum(nil), r, s) {
-				err = ERROR_VERIFICATION_FAILED
-			}
-		} else {
-			err = ERROR_HASH_NOT_AVAILABLE
+		res := SHA(bits)
+		if ok = res.Available(); !ok {
+			return
 		}
-	default:
-		err = ERROR_KEY_NOT_SUPPORTED
+		h := res.New()
+		h.Write(message)
+		ok = ecdsa.Verify(k, h.Sum(nil), r, s)
 	}
 	return
 }

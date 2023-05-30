@@ -15,7 +15,7 @@ type ASign interface {
 }
 
 type AVerify interface {
-	Verify(bits int64, message []byte, signature []byte) (err error)
+	Verify(bits int64, message []byte, signature []byte) (ok bool)
 }
 
 type Signer interface {

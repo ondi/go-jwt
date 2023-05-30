@@ -19,25 +19,24 @@ func (self Hmac_t) Name() string {
 }
 
 func (self Hmac_t) Sign(bits int64, message []byte) (signature []byte, err error) {
-	if res := SHA(bits); res.Available() {
-		h := hmac.New(res.New, self.key)
-		h.Write(message)
-		signature = h.Sum(nil)
-	} else {
+	res := SHA(bits)
+	if !res.Available() {
 		err = ERROR_HASH_NOT_AVAILABLE
+		return
 	}
+	h := hmac.New(res.New, self.key)
+	h.Write(message)
+	signature = h.Sum(nil)
 	return
 }
 
-func (self Hmac_t) Verify(bits int64, message []byte, signature []byte) (err error) {
-	if res := SHA(bits); res.Available() {
-		h := hmac.New(res.New, self.key)
-		h.Write(message)
-		if !hmac.Equal(h.Sum(nil), signature) {
-			err = ERROR_VERIFICATION_FAILED
-		}
-	} else {
-		err = ERROR_HASH_NOT_AVAILABLE
+func (self Hmac_t) Verify(bits int64, message []byte, signature []byte) (ok bool) {
+	res := SHA(bits)
+	if ok = res.Available(); !ok {
+		return
 	}
+	h := hmac.New(res.New, self.key)
+	h.Write(message)
+	ok = hmac.Equal(h.Sum(nil), signature)
 	return
 }

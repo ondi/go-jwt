@@ -13,12 +13,10 @@ import (
 )
 
 var (
-	ERROR_FORMAT              = errors.New("FORMAT ERROR")
-	ERROR_VERIFICATION_FAILED = errors.New("VERIFICATION FAILED")
-	ERROR_PEM_DECODE_FAILED   = errors.New("PEM DECODE FAILED")
-	ERROR_HASH_NOT_AVAILABLE  = errors.New("HASH NOT AVAILABLE")
-	ERROR_KEY_NOT_SUPPORTED   = errors.New("KEY NOT SUPPORTED")
-	ERROR_SIGNATURE_LENGTH    = errors.New("SIGNATURE LENGTH")
+	ERROR_FORMAT             = errors.New("FORMAT ERROR")
+	ERROR_PEM_DECODE_FAILED  = errors.New("PEM DECODE FAILED")
+	ERROR_HASH_NOT_AVAILABLE = errors.New("HASH NOT AVAILABLE")
+	ERROR_KEY_NOT_SUPPORTED  = errors.New("KEY NOT SUPPORTED")
 )
 
 func Sign(sign Signer, bits int64, payload []byte, out *bytes.Buffer) (err error) {
@@ -98,11 +96,9 @@ func Parse(in []byte) (alg string, bits int64, header []byte, payload []byte, si
 	return
 }
 
-func Verify(v Verifier, hash_bits int64, signature []byte, in []byte) (err error) {
+func Verify(v Verifier, hash_bits int64, signature []byte, in []byte) (ok bool) {
 	if ix_sign := bytes.LastIndexByte(in, byte('.')); ix_sign > -1 {
-		err = v.Verify(hash_bits, in[:ix_sign], signature)
-	} else {
-		err = ERROR_FORMAT
+		ok = v.Verify(hash_bits, in[:ix_sign], signature)
 	}
 	return
 }
