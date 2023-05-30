@@ -81,7 +81,7 @@ func (self Verify_t) Verify(bits int64, message []byte, signature []byte) (ok bo
 		}
 		h := res.New()
 		h.Write(message)
-		if err := rsa.VerifyPKCS1v15(k, res, h.Sum(nil), signature); err != nil {
+		if rsa.VerifyPKCS1v15(k, res, h.Sum(nil), signature) != nil {
 			return false
 		}
 	case *ecdsa.PublicKey:
