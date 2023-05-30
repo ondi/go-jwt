@@ -58,33 +58,33 @@ func (self Sign_t) Sign(bits int64, message []byte) (signature []byte, err error
 	case ed25519.PrivateKey:
 		signature, err = k.Sign(rand.Reader, message, crypto.Hash(0))
 	case *rsa.PrivateKey:
-		if res := SHA(bits); res.Available() {
-			h := res.New()
-			h.Write(message)
-			signature, err = k.Sign(rand.Reader, h.Sum(nil), res)
-		} else {
-			err = ERROR_HASH_NOT_AVAILABLE
+		res := SHA(bits)
+		if !res.Available() {
+			return nil, ERROR_HASH_NOT_AVAILABLE
 		}
+		h := res.New()
+		h.Write(message)
+		signature, err = k.Sign(rand.Reader, h.Sum(nil), res)
 	case *ecdsa.PrivateKey:
-		if res := SHA(bits); res.Available() {
-			h := res.New()
-			h.Write(message)
-			var r, s *big.Int
-			if r, s, err = ecdsa.Sign(rand.Reader, k, h.Sum(nil)); err != nil {
-				return
-			}
-			CurveBytes := (k.Params().BitSize + 7) / 8
-			for i := 0; i < CurveBytes-len(r.Bytes()); i++ {
-				signature = append(signature, 0)
-			}
-			signature = append(signature, r.Bytes()...)
-			for i := 0; i < CurveBytes-len(s.Bytes()); i++ {
-				signature = append(signature, 0)
-			}
-			signature = append(signature, s.Bytes()...)
-		} else {
-			err = ERROR_HASH_NOT_AVAILABLE
+		res := SHA(bits)
+		if !res.Available() {
+			return nil, ERROR_HASH_NOT_AVAILABLE
 		}
+		h := res.New()
+		h.Write(message)
+		var r, s *big.Int
+		if r, s, err = ecdsa.Sign(rand.Reader, k, h.Sum(nil)); err != nil {
+			return
+		}
+		CurveBytes := (k.Params().BitSize + 7) / 8
+		for i := 0; i < CurveBytes-len(r.Bytes()); i++ {
+			signature = append(signature, 0)
+		}
+		signature = append(signature, r.Bytes()...)
+		for i := 0; i < CurveBytes-len(s.Bytes()); i++ {
+			signature = append(signature, 0)
+		}
+		signature = append(signature, s.Bytes()...)
 	default:
 		err = ERROR_KEY_NOT_SUPPORTED
 	}
