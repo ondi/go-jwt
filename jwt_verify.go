@@ -125,23 +125,35 @@ func (self *Verify_rsa_t) Verify(bits int64, message []byte, signature []byte) (
 }
 
 func (self Verify_ecdsa_t) Verify(bits int64, message []byte, signature []byte) (ok bool) {
+	res := SHA(bits)
+	if ok = res.Available(); !ok {
+		return
+	}
 	CurveBytes := (self.key.Params().BitSize + 7) / 8
 	if len(signature) < 2*CurveBytes {
 		return
 	}
 	r := big.NewInt(0).SetBytes(signature[:CurveBytes])
 	s := big.NewInt(0).SetBytes(signature[CurveBytes:])
-	res := SHA(bits)
-	if ok = res.Available(); !ok {
-		return
-	}
 	h := res.New()
 	h.Write(message)
 	return ecdsa.Verify(self.key, h.Sum(nil), r, s)
 }
 
 func (self *Verify_dsa_t) Verify(bits int64, message []byte, signature []byte) (ok bool) {
-	return
+	res := SHA(bits)
+	if ok = res.Available(); !ok {
+		return
+	}
+	CurveBytes := (self.key.Q.BitLen() + 7) / 8
+	if len(signature) < 2*CurveBytes {
+		return
+	}
+	r := big.NewInt(0).SetBytes(signature[:CurveBytes])
+	s := big.NewInt(0).SetBytes(signature[CurveBytes:])
+	h := res.New()
+	h.Write(message)
+	return dsa.Verify(self.key, h.Sum(nil), r, s)
 }
 
 func (self *Verify_ecdh_t) Verify(bits int64, message []byte, signature []byte) (ok bool) {

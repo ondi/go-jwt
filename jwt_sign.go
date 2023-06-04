@@ -131,7 +131,26 @@ func (self *Sign_ecdsa_t) Sign(bits int64, message []byte) (signature []byte, er
 }
 
 func (self *Sign_dsa_t) Sign(bits int64, message []byte) (signature []byte, err error) {
-	return nil, ERROR_KEY_NOT_SUPPORTED
+	res := SHA(bits)
+	if !res.Available() {
+		return nil, ERROR_HASH_NOT_AVAILABLE
+	}
+	h := res.New()
+	h.Write(message)
+	r, s, err := dsa.Sign(rand.Reader, self.key, h.Sum(nil))
+	if err != nil {
+		return
+	}
+	CurveBytes := (self.key.Q.BitLen() + 7) / 8
+	for i := 0; i < CurveBytes-len(r.Bytes()); i++ {
+		signature = append(signature, 0)
+	}
+	signature = append(signature, r.Bytes()...)
+	for i := 0; i < CurveBytes-len(s.Bytes()); i++ {
+		signature = append(signature, 0)
+	}
+	signature = append(signature, s.Bytes()...)
+	return
 }
 
 func (self *Sign_ecdh_t) Sign(bits int64, message []byte) (signature []byte, err error) {

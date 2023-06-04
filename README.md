@@ -27,4 +27,7 @@ openssl req -new -x509 -days 3650 -key test08.pem -out test08.crt
 
 openssl ecparam -name prime256v1 -genkey -noout -out test09.pem
 openssl req -new -x509 -days 3650 -key test09.pem -out test09.crt
+
+openssl dsaparam -genkey -out test10.pem 1024
+openssl req -new -x509 -days 3650 -key test10.pem -out test10.crt
 ```

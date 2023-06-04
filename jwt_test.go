@@ -14,6 +14,8 @@ import (
 	"gotest.tools/assert"
 )
 
+var hmac_file = "test20.hmac"
+
 func SignVerify(t *testing.T, key string, cert string) {
 	hash_bits := int64(256)
 
@@ -87,7 +89,12 @@ func Test09(t *testing.T) {
 	SignVerify(t, "test09.pem", "test09.crt")
 }
 
-func Test10(t *testing.T) {
+// TODO
+// func Test10(t *testing.T) {
+// 	SignVerify(t, "test10.pem", "test10.crt")
+// }
+
+func Test20(t *testing.T) {
 	hash_bits := int64(256)
 
 	ts := time.Now()
@@ -103,23 +110,23 @@ func Test10(t *testing.T) {
 	)
 
 	var h Hmac
-	buf, err := ioutil.ReadFile("test10.hmac")
+	buf, err := ioutil.ReadFile(hmac_file)
 	assert.NilError(t, err, "READ KEY")
 	h, err = NewHmacKey(buf)
 	assert.NilError(t, err, "LOAD KEY")
 	var token bytes.Buffer
 	err = Sign(h, hash_bits, []byte(input), &token)
 	assert.NilError(t, err, "JWT CREATE")
-	t.Logf("Sign: key=%v, alg=%v, bits=%v, out=%s", "test10.hmac", h.Name(), hash_bits, token.Bytes())
+	t.Logf("Sign: key=%v, alg=%v, bits=%v, out=%s", hmac_file, h.Name(), hash_bits, token.Bytes())
 
 	_, bits, _, payload, signature, err := Parse(token.Bytes())
 	assert.NilError(t, err)
 	ok := Verify(h, bits, signature, token.Bytes())
 	assert.Assert(t, ok, "VERIFY ERROR")
-	t.Logf("Verify: cert=%v, alg=%v, bits=%v, payload=%v", "test10.hmac", h.Name(), hash_bits, payload)
+	t.Logf("Verify: cert=%v, alg=%v, bits=%v, payload=%v", hmac_file, h.Name(), hash_bits, payload)
 }
 
-func Test11(t *testing.T) {
+func Test21(t *testing.T) {
 	var err error
 	_, _, _, _, _, err = Parse(nil)
 	assert.Error(t, err, "FORMAT ERROR")
