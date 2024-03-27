@@ -7,7 +7,7 @@ package jwt
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"testing"
 	"time"
 
@@ -32,7 +32,7 @@ func SignVerify(t *testing.T, key string, cert string) {
 	)
 
 	var s Signer
-	buf, err := ioutil.ReadFile(key)
+	buf, err := os.ReadFile(key)
 	assert.NilError(t, err, "READ KEY")
 	s, err = NewSignPem(buf)
 	assert.NilError(t, err, "LOAD KEY")
@@ -42,7 +42,7 @@ func SignVerify(t *testing.T, key string, cert string) {
 	t.Logf("Sign: key=%v, alg=%v, bits=%v, out=%s", key, s.Name(), hash_bits, token.Bytes())
 
 	var v Verifier
-	buf, err = ioutil.ReadFile(cert)
+	buf, err = os.ReadFile(cert)
 	assert.NilError(t, err, "READ CERT")
 	v, err = NewVerifyCertPem(buf)
 	assert.NilError(t, err, "LOAD CERT")
@@ -110,7 +110,7 @@ func Test20(t *testing.T) {
 	)
 
 	var h Hmac
-	buf, err := ioutil.ReadFile(hmac_file)
+	buf, err := os.ReadFile(hmac_file)
 	assert.NilError(t, err, "READ KEY")
 	h, err = NewHmacKey(buf)
 	assert.NilError(t, err, "LOAD KEY")
