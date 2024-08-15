@@ -13,10 +13,10 @@ import (
 )
 
 var (
-	ERROR_FORMAT             = errors.New("FORMAT ERROR")
-	ERROR_PEM_DECODE_FAILED  = errors.New("PEM DECODE FAILED")
-	ERROR_HASH_NOT_AVAILABLE = errors.New("HASH NOT AVAILABLE")
-	ERROR_KEY_NOT_SUPPORTED  = errors.New("KEY NOT SUPPORTED")
+	ERROR_VERIFY_FORMAT             = errors.New("verify format error")
+	ERROR_VERIFY_PEM_DECODE_FAILED  = errors.New("verify PEM decode failed")
+	ERROR_VERIFY_HASH_NOT_AVAILABLE = errors.New("verify hash not available")
+	ERROR_VERIFY_KEY_NOT_SUPPORTED  = errors.New("verify key not supperted")
 )
 
 func Sign(sign Signer, bits int64, payload []byte, out *bytes.Buffer) (err error) {
@@ -49,7 +49,7 @@ func Sign(sign Signer, bits int64, payload []byte, out *bytes.Buffer) (err error
 func Parse(in []byte) (alg string, bits int64, header []byte, payload []byte, signature []byte, err error) {
 	ix_header := bytes.IndexByte(in, byte('.'))
 	if ix_header == -1 {
-		err = ERROR_FORMAT
+		err = ERROR_VERIFY_FORMAT
 		return
 	}
 	header = make([]byte, base64.RawURLEncoding.DecodedLen(ix_header))
@@ -58,23 +58,23 @@ func Parse(in []byte) (alg string, bits int64, header []byte, payload []byte, si
 	}
 	ix_alg := bytes.Index(header, []byte(`"alg"`))
 	if ix_alg == -1 {
-		err = ERROR_FORMAT
+		err = ERROR_VERIFY_FORMAT
 		return
 	}
 	ix_alg += 6
 	ix_alg1 := bytes.Index(header[ix_alg:], []byte(`"`))
 	if ix_alg1 == -1 {
-		err = ERROR_FORMAT
+		err = ERROR_VERIFY_FORMAT
 		return
 	}
 	ix_alg2 := bytes.Index(header[ix_alg+ix_alg1+1:], []byte(`"`))
 	if ix_alg2 == -1 {
-		err = ERROR_FORMAT
+		err = ERROR_VERIFY_FORMAT
 		return
 	}
 	alg = string(header[ix_alg+ix_alg1+1 : ix_alg+ix_alg1+ix_alg2+1])
 	if len(alg) < 5 {
-		err = ERROR_FORMAT
+		err = ERROR_VERIFY_FORMAT
 		return
 	}
 	if bits, err = strconv.ParseInt(alg[2:], 0, 64); err != nil {
@@ -82,7 +82,7 @@ func Parse(in []byte) (alg string, bits int64, header []byte, payload []byte, si
 	}
 	ix_payload := bytes.IndexByte(in[ix_header+1:], byte('.'))
 	if ix_payload == -1 {
-		err = ERROR_FORMAT
+		err = ERROR_VERIFY_FORMAT
 		return
 	}
 	payload = make([]byte, base64.RawURLEncoding.DecodedLen(ix_payload))

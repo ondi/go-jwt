@@ -39,7 +39,7 @@ type Verify_ecdh_t struct {
 func NewVerifyCertPem(buf []byte) (res Verifier, err error) {
 	block, _ := pem.Decode(buf)
 	if block == nil {
-		err = ERROR_PEM_DECODE_FAILED
+		err = ERROR_VERIFY_PEM_DECODE_FAILED
 		return
 	}
 	return NewVerifyCertDer(block.Bytes)
@@ -56,7 +56,7 @@ func NewVerifyCertDer(buf []byte) (res Verifier, err error) {
 func NewVerifyKeyPem(buf []byte) (res Verifier, err error) {
 	block, _ := pem.Decode(buf)
 	if block == nil {
-		err = ERROR_PEM_DECODE_FAILED
+		err = ERROR_VERIFY_PEM_DECODE_FAILED
 		return
 	}
 	return NewVerifyKeyDer(block.Bytes)
@@ -83,7 +83,7 @@ func NewVerifyKey(key crypto.PublicKey) (res Verifier, err error) {
 	case *ecdh.PublicKey:
 		return &Verify_ecdh_t{key: k}, nil
 	default:
-		return nil, ERROR_KEY_NOT_SUPPORTED
+		return nil, ERROR_VERIFY_KEY_NOT_SUPPORTED
 	}
 }
 

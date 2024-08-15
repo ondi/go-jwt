@@ -21,7 +21,7 @@ func (self Hmac_t) Name() string {
 func (self Hmac_t) Sign(bits int64, message []byte) (signature []byte, err error) {
 	res := SHA(bits)
 	if !res.Available() {
-		err = ERROR_HASH_NOT_AVAILABLE
+		err = ERROR_VERIFY_HASH_NOT_AVAILABLE
 		return
 	}
 	h := hmac.New(res.New, self.key)

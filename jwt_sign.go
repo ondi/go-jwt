@@ -39,7 +39,7 @@ type Sign_ecdh_t struct {
 func NewSignPem(buf []byte) (res Signer, err error) {
 	block, _ := pem.Decode(buf)
 	if block == nil {
-		err = ERROR_PEM_DECODE_FAILED
+		err = ERROR_VERIFY_PEM_DECODE_FAILED
 		return
 	}
 	return NewSignDer(block.Bytes)
@@ -69,7 +69,7 @@ func NewSignKey(key crypto.PrivateKey) (Signer, error) {
 	case *ecdh.PrivateKey:
 		return &Sign_ecdh_t{key: k}, nil
 	default:
-		return nil, ERROR_KEY_NOT_SUPPORTED
+		return nil, ERROR_VERIFY_KEY_NOT_SUPPORTED
 	}
 }
 
@@ -100,7 +100,7 @@ func (self *Sign_ed25519_t) Sign(bits int64, message []byte) ([]byte, error) {
 func (self *Sign_rsa_t) Sign(bits int64, message []byte) ([]byte, error) {
 	res := SHA(bits)
 	if !res.Available() {
-		return nil, ERROR_HASH_NOT_AVAILABLE
+		return nil, ERROR_VERIFY_HASH_NOT_AVAILABLE
 	}
 	h := res.New()
 	h.Write(message)
@@ -110,7 +110,7 @@ func (self *Sign_rsa_t) Sign(bits int64, message []byte) ([]byte, error) {
 func (self *Sign_ecdsa_t) Sign(bits int64, message []byte) (signature []byte, err error) {
 	res := SHA(bits)
 	if !res.Available() {
-		return nil, ERROR_HASH_NOT_AVAILABLE
+		return nil, ERROR_VERIFY_HASH_NOT_AVAILABLE
 	}
 	h := res.New()
 	h.Write(message)
@@ -133,7 +133,7 @@ func (self *Sign_ecdsa_t) Sign(bits int64, message []byte) (signature []byte, er
 func (self *Sign_dsa_t) Sign(bits int64, message []byte) (signature []byte, err error) {
 	res := SHA(bits)
 	if !res.Available() {
-		return nil, ERROR_HASH_NOT_AVAILABLE
+		return nil, ERROR_VERIFY_HASH_NOT_AVAILABLE
 	}
 	h := res.New()
 	h.Write(message)
@@ -154,5 +154,5 @@ func (self *Sign_dsa_t) Sign(bits int64, message []byte) (signature []byte, err 
 }
 
 func (self *Sign_ecdh_t) Sign(bits int64, message []byte) (signature []byte, err error) {
-	return nil, ERROR_KEY_NOT_SUPPORTED
+	return nil, ERROR_VERIFY_KEY_NOT_SUPPORTED
 }
