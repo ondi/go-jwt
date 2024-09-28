@@ -17,94 +17,79 @@ import (
 )
 
 type Verify_ed25519_t struct {
+	AlgIdent_t
 	key ed25519.PublicKey
 }
 
 type Verify_rsa_t struct {
+	AlgIdent_t
 	key *rsa.PublicKey
 }
 
 type Verify_ecdsa_t struct {
+	AlgIdent_t
 	key *ecdsa.PublicKey
 }
 
 type Verify_dsa_t struct {
+	AlgIdent_t
 	key *dsa.PublicKey
 }
 
 type Verify_ecdh_t struct {
+	AlgIdent_t
 	key *ecdh.PublicKey
 }
 
-func NewVerifyCertPem(buf []byte) (res Verifier, err error) {
+func NewVerifyCertPem(id string, buf []byte) (res Verifier, err error) {
 	block, _ := pem.Decode(buf)
 	if block == nil {
 		err = ERROR_VERIFY_PEM_DECODE_FAILED
 		return
 	}
-	return NewVerifyCertDer(block.Bytes)
+	return NewVerifyCertDer(id, block.Bytes)
 }
 
-func NewVerifyCertDer(buf []byte) (res Verifier, err error) {
+func NewVerifyCertDer(id string, buf []byte) (res Verifier, err error) {
 	certificate, err := x509.ParseCertificate(buf)
 	if err != nil {
 		return
 	}
-	return NewVerifyKey(certificate.PublicKey)
+	return NewVerifyKey(id, certificate.PublicKey)
 }
 
-func NewVerifyKeyPem(buf []byte) (res Verifier, err error) {
+func NewVerifyKeyPem(id string, buf []byte) (res Verifier, err error) {
 	block, _ := pem.Decode(buf)
 	if block == nil {
 		err = ERROR_VERIFY_PEM_DECODE_FAILED
 		return
 	}
-	return NewVerifyKeyDer(block.Bytes)
+	return NewVerifyKeyDer(id, block.Bytes)
 }
 
-func NewVerifyKeyDer(buf []byte) (res Verifier, err error) {
+func NewVerifyKeyDer(id string, buf []byte) (res Verifier, err error) {
 	key, err := x509.ParsePKIXPublicKey(buf)
 	if err != nil {
 		return
 	}
-	return NewVerifyKey(key)
+	return NewVerifyKey(id, key)
 }
 
-func NewVerifyKey(key crypto.PublicKey) (res Verifier, err error) {
+func NewVerifyKey(id string, key crypto.PublicKey) (res Verifier, err error) {
 	switch k := key.(type) {
 	case ed25519.PublicKey:
-		return &Verify_ed25519_t{key: k}, nil
+		return &Verify_ed25519_t{AlgIdent_t: AlgIdent_t{id: id, name: "ED"}, key: k}, nil
 	case *rsa.PublicKey:
-		return &Verify_rsa_t{key: k}, nil
+		return &Verify_rsa_t{AlgIdent_t: AlgIdent_t{id: id, name: "RS"}, key: k}, nil
 	case *ecdsa.PublicKey:
-		return &Verify_ecdsa_t{key: k}, nil
+		return &Verify_ecdsa_t{AlgIdent_t: AlgIdent_t{id: id, name: "ES"}, key: k}, nil
 	case *dsa.PublicKey:
-		return &Verify_dsa_t{key: k}, nil
+		return &Verify_dsa_t{AlgIdent_t: AlgIdent_t{id: id, name: "DS"}, key: k}, nil
 	case *ecdh.PublicKey:
-		return &Verify_ecdh_t{key: k}, nil
+		return &Verify_ecdh_t{AlgIdent_t: AlgIdent_t{id: id, name: "EC"}, key: k}, nil
 	default:
 		return nil, ERROR_VERIFY_KEY_NOT_SUPPORTED
 	}
-}
-
-func (self *Verify_ed25519_t) Name() string {
-	return "ED"
-}
-
-func (self *Verify_rsa_t) Name() string {
-	return "RS"
-}
-
-func (self *Verify_ecdsa_t) Name() string {
-	return "ES"
-}
-
-func (self *Verify_dsa_t) Name() string {
-	return "DS"
-}
-
-func (self *Verify_ecdh_t) Name() string {
-	return "EC"
 }
 
 func (self *Verify_ed25519_t) Verify(bits int64, message []byte, signature []byte) bool {

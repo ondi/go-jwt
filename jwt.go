@@ -6,32 +6,46 @@ package jwt
 
 import "crypto"
 
-type AName interface {
-	Name() string
+type AlgIdent interface {
+	AlgId() string
+	AlgName() string
 }
 
-type ASign interface {
+type AlgSign interface {
 	Sign(bits int64, message []byte) (signature []byte, err error)
 }
 
-type AVerify interface {
+type AlgVerify interface {
 	Verify(bits int64, message []byte, signature []byte) (ok bool)
 }
 
 type Signer interface {
-	AName
-	ASign
+	AlgIdent
+	AlgSign
 }
 
 type Verifier interface {
-	AName
-	AVerify
+	AlgIdent
+	AlgVerify
 }
 
 type Hmac interface {
-	AName
-	ASign
-	AVerify
+	AlgIdent
+	AlgSign
+	AlgVerify
+}
+
+type AlgIdent_t struct {
+	id   string
+	name string
+}
+
+func (self *AlgIdent_t) AlgId() string {
+	return self.id
+}
+
+func (self *AlgIdent_t) AlgName() string {
+	return self.name
 }
 
 func SHA(bits int64) (res crypto.Hash) {

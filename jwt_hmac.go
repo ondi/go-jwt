@@ -7,15 +7,21 @@ package jwt
 import "crypto/hmac"
 
 type Hmac_t struct {
-	key []byte
+	id   string
+	name string
+	key  []byte
 }
 
-func NewHmacKey(key []byte) (res Hmac, err error) {
-	return Hmac_t{key: append([]byte{}, key...)}, nil
+func NewHmacKey(id string, key []byte) (res Hmac, err error) {
+	return Hmac_t{id: id, name: "HS", key: append([]byte{}, key...)}, nil
 }
 
-func (self Hmac_t) Name() string {
-	return "HS"
+func (self Hmac_t) AlgId() string {
+	return self.id
+}
+
+func (self Hmac_t) AlgName() string {
+	return self.name
 }
 
 func (self Hmac_t) Sign(bits int64, message []byte) (signature []byte, err error) {

@@ -22,7 +22,7 @@ var (
 func Sign(sign Signer, bits int64, payload []byte, out *bytes.Buffer) (err error) {
 	w := base64.NewEncoder(base64.RawURLEncoding, out)
 	io.WriteString(w, `{"alg":"`)
-	io.WriteString(w, sign.Name())
+	io.WriteString(w, sign.AlgName())
 	io.WriteString(w, strconv.FormatInt(bits, 10))
 	io.WriteString(w, `"}`)
 	w.Close()

@@ -34,23 +34,23 @@ func SignVerify(t *testing.T, key string, cert string) {
 	var s Signer
 	buf, err := os.ReadFile(key)
 	assert.NilError(t, err, "READ KEY")
-	s, err = NewSignPem(buf)
+	s, err = NewSignPem("", buf)
 	assert.NilError(t, err, "LOAD KEY")
 	var token bytes.Buffer
 	err = Sign(s, hash_bits, []byte(input), &token)
 	assert.NilError(t, err, "JWT CREATE")
-	t.Logf("Sign: key=%v, alg=%v, bits=%v, out=%s", key, s.Name(), hash_bits, token.Bytes())
+	t.Logf("Sign: key=%v, alg=%v, bits=%v, out=%s", key, s.AlgName(), hash_bits, token.Bytes())
 
 	var v Verifier
 	buf, err = os.ReadFile(cert)
 	assert.NilError(t, err, "READ CERT")
-	v, err = NewVerifyCertPem(buf)
+	v, err = NewVerifyCertPem("", buf)
 	assert.NilError(t, err, "LOAD CERT")
 	_, bits, _, payload, signature, err := Parse(token.Bytes())
 	assert.NilError(t, err)
 	ok := Verify(v, bits, signature, token.Bytes())
 	assert.Assert(t, ok, "VERIFY ERROR")
-	t.Logf("Verify: cert=%v, alg=%v, bits=%v, payload=%v", cert, v.Name(), hash_bits, payload)
+	t.Logf("Verify: cert=%v, alg=%v, bits=%v, payload=%v", cert, v.AlgName(), hash_bits, payload)
 }
 
 func Test01(t *testing.T) {
@@ -112,30 +112,30 @@ func Test20(t *testing.T) {
 	var h Hmac
 	buf, err := os.ReadFile(hmac_file)
 	assert.NilError(t, err, "READ KEY")
-	h, err = NewHmacKey(buf)
+	h, err = NewHmacKey("", buf)
 	assert.NilError(t, err, "LOAD KEY")
 	var token bytes.Buffer
 	err = Sign(h, hash_bits, []byte(input), &token)
 	assert.NilError(t, err, "JWT CREATE")
-	t.Logf("Sign: key=%v, alg=%v, bits=%v, out=%s", hmac_file, h.Name(), hash_bits, token.Bytes())
+	t.Logf("Sign: key=%v, alg=%v, bits=%v, out=%s", hmac_file, h.AlgName(), hash_bits, token.Bytes())
 
 	_, bits, _, payload, signature, err := Parse(token.Bytes())
 	assert.NilError(t, err)
 	ok := Verify(h, bits, signature, token.Bytes())
 	assert.Assert(t, ok, "VERIFY ERROR")
-	t.Logf("Verify: cert=%v, alg=%v, bits=%v, payload=%v", hmac_file, h.Name(), hash_bits, payload)
+	t.Logf("Verify: cert=%v, alg=%v, bits=%v, payload=%v", hmac_file, h.AlgName(), hash_bits, payload)
 }
 
 func Test21(t *testing.T) {
 	var err error
 	_, _, _, _, _, err = Parse(nil)
-	assert.Error(t, err, "FORMAT ERROR")
+	assert.Error(t, err, "verify format error")
 	_, _, _, _, _, err = Parse([]byte{})
-	assert.Error(t, err, "FORMAT ERROR")
+	assert.Error(t, err, "verify format error")
 	_, _, _, _, _, err = Parse([]byte("eyJhbGciOiJFRDI1NTE5In0K"))
-	assert.Error(t, err, "FORMAT ERROR")
+	assert.Error(t, err, "verify format error")
 	_, _, _, _, _, err = Parse([]byte("eyJhbGciOiJFRDI1NTE5In0K.eyJleHAiOjE1ODMyMzM2NjksImlhdCI6MTU4MzIzMzY1NCwibmJmIjoxNTgzMjMzNjU0fQo"))
-	assert.Error(t, err, "FORMAT ERROR")
+	assert.Error(t, err, "verify format error")
 	_, _, _, _, _, err = Parse([]byte("eyJhbGciOiJFRDI1NTE5In0K.eyJleHAiOjE1ODMyMzM2NjksImlhdCI6MTU4MzIzMzY1NCwibmJmIjoxNTgzMjMzNjU0fQo.YvtfzF8U6N-NmNj2imi3GcVK3fjpgEZ2dmbxDLugyDl1WW1bBK1eRCs2vQf73i7RYJrTWVFeaROodxDrc8_qBQ"))
 	assert.NilError(t, err)
 }

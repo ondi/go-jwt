@@ -17,35 +17,40 @@ import (
 )
 
 type Sign_ed25519_t struct {
+	AlgIdent_t
 	key ed25519.PrivateKey
 }
 
 type Sign_rsa_t struct {
+	AlgIdent_t
 	key *rsa.PrivateKey
 }
 
 type Sign_ecdsa_t struct {
+	AlgIdent_t
 	key *ecdsa.PrivateKey
 }
 
 type Sign_dsa_t struct {
+	AlgIdent_t
 	key *dsa.PrivateKey
 }
 
 type Sign_ecdh_t struct {
+	AlgIdent_t
 	key *ecdh.PrivateKey
 }
 
-func NewSignPem(buf []byte) (res Signer, err error) {
+func NewSignPem(id string, buf []byte) (res Signer, err error) {
 	block, _ := pem.Decode(buf)
 	if block == nil {
 		err = ERROR_VERIFY_PEM_DECODE_FAILED
 		return
 	}
-	return NewSignDer(block.Bytes)
+	return NewSignDer(id, block.Bytes)
 }
 
-func NewSignDer(buf []byte) (Signer, error) {
+func NewSignDer(id string, buf []byte) (Signer, error) {
 	key, err := x509.ParsePKCS8PrivateKey(buf)
 	if err != nil {
 		key, err = x509.ParseECPrivateKey(buf)
@@ -53,44 +58,24 @@ func NewSignDer(buf []byte) (Signer, error) {
 			return nil, err
 		}
 	}
-	return NewSignKey(key)
+	return NewSignKey(id, key)
 }
 
-func NewSignKey(key crypto.PrivateKey) (Signer, error) {
+func NewSignKey(id string, key crypto.PrivateKey) (Signer, error) {
 	switch k := key.(type) {
 	case ed25519.PrivateKey:
-		return &Sign_ed25519_t{key: k}, nil
+		return &Sign_ed25519_t{AlgIdent_t: AlgIdent_t{id: id, name: "ED"}, key: k}, nil
 	case *rsa.PrivateKey:
-		return &Sign_rsa_t{key: k}, nil
+		return &Sign_rsa_t{AlgIdent_t: AlgIdent_t{id: id, name: "RS"}, key: k}, nil
 	case *ecdsa.PrivateKey:
-		return &Sign_ecdsa_t{key: k}, nil
+		return &Sign_ecdsa_t{AlgIdent_t: AlgIdent_t{id: id, name: "ES"}, key: k}, nil
 	case *dsa.PrivateKey:
-		return &Sign_dsa_t{key: k}, nil
+		return &Sign_dsa_t{AlgIdent_t: AlgIdent_t{id: id, name: "DS"}, key: k}, nil
 	case *ecdh.PrivateKey:
-		return &Sign_ecdh_t{key: k}, nil
+		return &Sign_ecdh_t{AlgIdent_t: AlgIdent_t{id: id, name: "EC"}, key: k}, nil
 	default:
 		return nil, ERROR_VERIFY_KEY_NOT_SUPPORTED
 	}
-}
-
-func (self *Sign_ed25519_t) Name() string {
-	return "ED"
-}
-
-func (self *Sign_rsa_t) Name() string {
-	return "RS"
-}
-
-func (self *Sign_ecdsa_t) Name() string {
-	return "ES"
-}
-
-func (self *Sign_dsa_t) Name() string {
-	return "DS"
-}
-
-func (self *Sign_ecdh_t) Name() string {
-	return "EC"
 }
 
 func (self *Sign_ed25519_t) Sign(bits int64, message []byte) ([]byte, error) {
