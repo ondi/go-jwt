@@ -17,27 +17,27 @@ import (
 )
 
 type Verify_ed25519_t struct {
-	AlgIdent_t
+	AlgKey_t
 	key ed25519.PublicKey
 }
 
 type Verify_rsa_t struct {
-	AlgIdent_t
+	AlgKey_t
 	key *rsa.PublicKey
 }
 
 type Verify_ecdsa_t struct {
-	AlgIdent_t
+	AlgKey_t
 	key *ecdsa.PublicKey
 }
 
 type Verify_dsa_t struct {
-	AlgIdent_t
+	AlgKey_t
 	key *dsa.PublicKey
 }
 
 type Verify_ecdh_t struct {
-	AlgIdent_t
+	AlgKey_t
 	key *ecdh.PublicKey
 }
 
@@ -78,15 +78,15 @@ func NewVerifyKeyDer(id string, buf []byte) (res Verifier, err error) {
 func NewVerifyKey(id string, key crypto.PublicKey) (res Verifier, err error) {
 	switch k := key.(type) {
 	case ed25519.PublicKey:
-		return &Verify_ed25519_t{AlgIdent_t: AlgIdent_t{id: id, name: "ED"}, key: k}, nil
+		return &Verify_ed25519_t{AlgKey_t: AlgKey_t{id: id, name: "ED"}, key: k}, nil
 	case *rsa.PublicKey:
-		return &Verify_rsa_t{AlgIdent_t: AlgIdent_t{id: id, name: "RS"}, key: k}, nil
+		return &Verify_rsa_t{AlgKey_t: AlgKey_t{id: id, name: "RS"}, key: k}, nil
 	case *ecdsa.PublicKey:
-		return &Verify_ecdsa_t{AlgIdent_t: AlgIdent_t{id: id, name: "ES"}, key: k}, nil
+		return &Verify_ecdsa_t{AlgKey_t: AlgKey_t{id: id, name: "ES"}, key: k}, nil
 	case *dsa.PublicKey:
-		return &Verify_dsa_t{AlgIdent_t: AlgIdent_t{id: id, name: "DS"}, key: k}, nil
+		return &Verify_dsa_t{AlgKey_t: AlgKey_t{id: id, name: "DS"}, key: k}, nil
 	case *ecdh.PublicKey:
-		return &Verify_ecdh_t{AlgIdent_t: AlgIdent_t{id: id, name: "EC"}, key: k}, nil
+		return &Verify_ecdh_t{AlgKey_t: AlgKey_t{id: id, name: "EC"}, key: k}, nil
 	default:
 		return nil, ERROR_VERIFY_KEY_NOT_SUPPORTED
 	}

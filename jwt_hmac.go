@@ -7,24 +7,15 @@ package jwt
 import "crypto/hmac"
 
 type Hmac_t struct {
-	id   string
-	name string
-	key  []byte
+	AlgKey_t
+	key []byte
 }
 
 func NewHmacKey(id string, key []byte) (res Hmac, err error) {
-	return Hmac_t{id: id, name: "HS", key: append([]byte{}, key...)}, nil
+	return &Hmac_t{AlgKey_t: AlgKey_t{id: id, name: "HS"}, key: append([]byte{}, key...)}, nil
 }
 
-func (self Hmac_t) AlgId() string {
-	return self.id
-}
-
-func (self Hmac_t) AlgName() string {
-	return self.name
-}
-
-func (self Hmac_t) Sign(bits int64, message []byte) (signature []byte, err error) {
+func (self *Hmac_t) Sign(bits int64, message []byte) (signature []byte, err error) {
 	res := SHA(bits)
 	if !res.Available() {
 		err = ERROR_VERIFY_HASH_NOT_AVAILABLE
@@ -36,7 +27,7 @@ func (self Hmac_t) Sign(bits int64, message []byte) (signature []byte, err error
 	return
 }
 
-func (self Hmac_t) Verify(bits int64, message []byte, signature []byte) (ok bool) {
+func (self *Hmac_t) Verify(bits int64, message []byte, signature []byte) (ok bool) {
 	res := SHA(bits)
 	if ok = res.Available(); !ok {
 		return

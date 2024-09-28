@@ -17,27 +17,27 @@ import (
 )
 
 type Sign_ed25519_t struct {
-	AlgIdent_t
+	AlgKey_t
 	key ed25519.PrivateKey
 }
 
 type Sign_rsa_t struct {
-	AlgIdent_t
+	AlgKey_t
 	key *rsa.PrivateKey
 }
 
 type Sign_ecdsa_t struct {
-	AlgIdent_t
+	AlgKey_t
 	key *ecdsa.PrivateKey
 }
 
 type Sign_dsa_t struct {
-	AlgIdent_t
+	AlgKey_t
 	key *dsa.PrivateKey
 }
 
 type Sign_ecdh_t struct {
-	AlgIdent_t
+	AlgKey_t
 	key *ecdh.PrivateKey
 }
 
@@ -64,15 +64,15 @@ func NewSignDer(id string, buf []byte) (Signer, error) {
 func NewSignKey(id string, key crypto.PrivateKey) (Signer, error) {
 	switch k := key.(type) {
 	case ed25519.PrivateKey:
-		return &Sign_ed25519_t{AlgIdent_t: AlgIdent_t{id: id, name: "ED"}, key: k}, nil
+		return &Sign_ed25519_t{AlgKey_t: AlgKey_t{id: id, name: "ED"}, key: k}, nil
 	case *rsa.PrivateKey:
-		return &Sign_rsa_t{AlgIdent_t: AlgIdent_t{id: id, name: "RS"}, key: k}, nil
+		return &Sign_rsa_t{AlgKey_t: AlgKey_t{id: id, name: "RS"}, key: k}, nil
 	case *ecdsa.PrivateKey:
-		return &Sign_ecdsa_t{AlgIdent_t: AlgIdent_t{id: id, name: "ES"}, key: k}, nil
+		return &Sign_ecdsa_t{AlgKey_t: AlgKey_t{id: id, name: "ES"}, key: k}, nil
 	case *dsa.PrivateKey:
-		return &Sign_dsa_t{AlgIdent_t: AlgIdent_t{id: id, name: "DS"}, key: k}, nil
+		return &Sign_dsa_t{AlgKey_t: AlgKey_t{id: id, name: "DS"}, key: k}, nil
 	case *ecdh.PrivateKey:
-		return &Sign_ecdh_t{AlgIdent_t: AlgIdent_t{id: id, name: "EC"}, key: k}, nil
+		return &Sign_ecdh_t{AlgKey_t: AlgKey_t{id: id, name: "EC"}, key: k}, nil
 	default:
 		return nil, ERROR_VERIFY_KEY_NOT_SUPPORTED
 	}

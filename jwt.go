@@ -6,8 +6,8 @@ package jwt
 
 import "crypto"
 
-type AlgIdent interface {
-	AlgId() string
+type AlgKey interface {
+	KeyId() string
 	AlgName() string
 }
 
@@ -20,31 +20,31 @@ type AlgVerify interface {
 }
 
 type Signer interface {
-	AlgIdent
+	AlgKey
 	AlgSign
 }
 
 type Verifier interface {
-	AlgIdent
+	AlgKey
 	AlgVerify
 }
 
 type Hmac interface {
-	AlgIdent
+	AlgKey
 	AlgSign
 	AlgVerify
 }
 
-type AlgIdent_t struct {
+type AlgKey_t struct {
 	id   string
 	name string
 }
 
-func (self *AlgIdent_t) AlgId() string {
+func (self *AlgKey_t) KeyId() string {
 	return self.id
 }
 
-func (self *AlgIdent_t) AlgName() string {
+func (self *AlgKey_t) AlgName() string {
 	return self.name
 }
 
