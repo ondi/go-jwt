@@ -4,7 +4,10 @@
 
 package jwt
 
-import "crypto/hmac"
+import (
+	"crypto"
+	"crypto/hmac"
+)
 
 type Hmac_t struct {
 	AlgKey_t
@@ -13,6 +16,10 @@ type Hmac_t struct {
 
 func NewHmacKey(id string, key []byte) (res Hmac, err error) {
 	return &Hmac_t{AlgKey_t: AlgKey_t{id: id, name: "HS"}, key: append([]byte{}, key...)}, nil
+}
+
+func (self *Hmac_t) Public() crypto.PublicKey {
+	return nil
 }
 
 func (self *Hmac_t) Sign(bits int64, message []byte) (signature []byte, err error) {

@@ -1,6 +1,6 @@
 module github.com/ondi/go-jwt
 
-go 1.21
+go 1.25
 
 require gotest.tools v2.2.0+incompatible
 

@@ -13,6 +13,7 @@ type AlgKey interface {
 
 type AlgSign interface {
 	Sign(bits int64, message []byte) (signature []byte, err error)
+	Public() crypto.PublicKey
 }
 
 type AlgVerify interface {

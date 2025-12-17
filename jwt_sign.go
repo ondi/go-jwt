@@ -78,6 +78,26 @@ func NewSignKey(id string, key crypto.PrivateKey) (Signer, error) {
 	}
 }
 
+func (self *Sign_ed25519_t) Public() crypto.PublicKey {
+	return self.key.Public()
+}
+
+func (self *Sign_rsa_t) Public() crypto.PublicKey {
+	return self.key.Public()
+}
+
+func (self *Sign_ecdsa_t) Public() crypto.PublicKey {
+	return self.key.Public()
+}
+
+func (self *Sign_dsa_t) Public() crypto.PublicKey {
+	return self.key.PublicKey
+}
+
+func (self *Sign_ecdh_t) Public() crypto.PublicKey {
+	return self.key.Public()
+}
+
 func (self *Sign_ed25519_t) Sign(bits int64, message []byte) ([]byte, error) {
 	return self.key.Sign(rand.Reader, message, crypto.Hash(0))
 }
