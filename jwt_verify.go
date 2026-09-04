@@ -70,7 +70,16 @@ func NewVerifyKeyPem(id string, buf []byte) (res Verifier, err error) {
 func NewVerifyKeyDer(id string, buf []byte) (res Verifier, err error) {
 	key, err := x509.ParsePKIXPublicKey(buf)
 	if err != nil {
-		return
+		key, err = x509.ParsePKCS8PrivateKey(buf)
+		if err != nil {
+			return
+		}
+		var s Signer
+		s, err = NewSignKey("", key)
+		if err != nil {
+			return
+		}
+		key = s.Public()
 	}
 	return NewVerifyKey(id, key)
 }
